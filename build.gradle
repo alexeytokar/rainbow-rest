@@ -1,7 +1,6 @@
 import java.util.regex.Matcher
 
 group 'ua.net.tokar'
-version '1'
 
 apply plugin: 'java'
 apply plugin: 'idea'
