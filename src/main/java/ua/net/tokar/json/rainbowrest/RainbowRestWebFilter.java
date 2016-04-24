@@ -13,6 +13,7 @@ public class RainbowRestWebFilter implements Filter {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String FIELDS_PARAM_NAME = "fields";
     private static final String INCLUDE_PARAM_NAME = "include";
+    private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -30,6 +31,24 @@ public class RainbowRestWebFilter implements Filter {
             ServletResponse response,
             FilterChain filterChain
     ) throws IOException, ServletException {
+        boolean hasAlreadyFilteredAttribute = request.getAttribute(getAlreadyFilteredAttributeName()) != null;
+
+        if (hasAlreadyFilteredAttribute ) {
+            filterChain.doFilter(request, response);
+        } else {
+            request.setAttribute(getAlreadyFilteredAttributeName(), Boolean.TRUE);
+            try {
+                doFilterInternal(request, response, filterChain);
+            } finally {
+                request.removeAttribute(getAlreadyFilteredAttributeName());
+            }
+        }
+    }
+    private String getAlreadyFilteredAttributeName() {
+        return getClass().getName() + ALREADY_FILTERED_SUFFIX;
+    }
+
+    private void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         HtmlResponseWrapper capturingResponseWrapper = new HtmlResponseWrapper( response );
 
         filterChain.doFilter(request, capturingResponseWrapper);
