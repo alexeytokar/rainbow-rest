@@ -10,6 +10,6 @@ Maven dependency is:
 <dependency>
   <groupId>ua.net.tokar</groupId>
   <artifactId>rainbow-rest</artifactId>
-  <version>2.1.3</version>
+  <version>2.1.4</version>
 </dependency>
 ````
