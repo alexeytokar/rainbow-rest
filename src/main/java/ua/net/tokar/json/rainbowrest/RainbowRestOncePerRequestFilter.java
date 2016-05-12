@@ -3,7 +3,7 @@ package ua.net.tokar.json.rainbowrest;
 import javax.servlet.*;
 import java.io.IOException;
 
-public abstract class RainbowRestOncePerRequestFilter implements Filter {
+abstract class RainbowRestOncePerRequestFilter implements Filter {
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
 
     @Override
