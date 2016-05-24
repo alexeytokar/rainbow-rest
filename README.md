@@ -8,7 +8,7 @@ All of the features are accessible by just adding one of the following filters:
 Usage samples are available at https://github.com/alexeytokar/rainbow-rest-sample
 
 Maven dependency is:
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/ua.net.tokar/rainbow-rest/badge.svg?style=plastic)](http://mvnrepository.com/artifact/ua.net.tokar/rainbow-rest)
+[![Maven Central](https://img.shields.io/maven-central/v/ua.net.tokar/rainbow-rest.svg)](http://mvnrepository.com/artifact/ua.net.tokar/rainbow-rest)
 ````
 <dependency>
   <groupId>ua.net.tokar</groupId>
