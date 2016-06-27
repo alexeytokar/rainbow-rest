@@ -135,14 +135,20 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     }
 
     private void filterTree(JsonNode tree, Set<String> includedFields ) {
-        if (tree.isObject()) {
-            for (final Iterator<Map.Entry<String,JsonNode>> it = tree.fields(); it.hasNext(); ) {
-                Map.Entry<String, JsonNode> entry = it.next();
-                final String key = entry.getKey();
-                if ( !includedFields.contains( key ) ) {
-                    it.remove();
-                } else {
-                    filterTree( entry.getValue(), includedFields );
+        if ( tree.isArray() ) {
+            for( final Iterator<JsonNode> it = tree.elements(); it.hasNext(); ) {
+                filterTree( it.next(), includedFields );
+            }
+        } else {
+            if ( tree.isObject() ) {
+                for (final Iterator<Map.Entry<String,JsonNode>> it = tree.fields(); it.hasNext(); ) {
+                    Map.Entry<String, JsonNode> entry = it.next();
+                    final String key = entry.getKey();
+                    if ( !includedFields.contains( key ) ) {
+                        it.remove();
+                    } else {
+                        filterTree( entry.getValue(), includedFields );
+                    }
                 }
             }
         }
