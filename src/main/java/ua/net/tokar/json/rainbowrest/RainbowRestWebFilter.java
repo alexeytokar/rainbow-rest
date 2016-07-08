@@ -2,6 +2,7 @@ package ua.net.tokar.json.rainbowrest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 
@@ -109,29 +110,62 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     ) throws ServletException, IOException {
         List<String> inc = new ArrayList<>( include );
         Collections.sort( inc ); // TODO sort parent nodes first. count dots in name
+
+        for ( String s : inc ) {
+            processSingleInclude( tree, s.split( "\\." ), 0, request, response );
+        }
+    }
+
+    private void processSingleInclude(
+            JsonNode tree, String[] s, int index, ServletRequest request, ServletResponse response
+    ) throws ServletException, IOException {
         JsonNode parent = tree;
-        for (String s : inc) {
-            JsonNode node = tree;
-            String nodeName = "";
-            for (String s1 : s.split("\\.")) {
-                nodeName = s1;
-                parent = node;
-                node = node.path( s1 );
-                if ( node.isMissingNode() ) {
-                    break;
+        JsonNode node = tree;
+        String nodeName = "";
+        for ( int i = index; i < s.length; ++i ) {
+            nodeName = s[i];
+            parent = node;
+            if ( node.isArray() ) {
+                for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
+                    processSingleInclude( it.next(), s, i, request, response );
                 }
             }
-
-            if ( !node.isMissingNode() ) {
-                if ( !node.path(INCLUSION_ELEMENT_ATTRIBUTE).isMissingNode() ) {
-                    HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
-                    request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() ).forward( request, copy );
-
-                    JsonNode subtree = mapper.readTree(copy.getCaptureAsString());
-                    ((ObjectNode)parent).set(nodeName, subtree );
-                }
+            node = node.path( s[i] );
+            if ( node.isMissingNode() ) {
+                break;
             }
         }
+
+        if ( !node.isMissingNode() ) {
+            if ( node.isArray() ) {
+                ArrayNode newArrayNode = mapper.createArrayNode();
+                for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ++index ) {
+                    newArrayNode.add( createNodeForInclude( it.next(), request, response ) );
+                }
+                ( (ObjectNode) parent ).set( nodeName, newArrayNode );
+            } else {
+                ( (ObjectNode) parent ).set(
+                        nodeName,
+                        createNodeForInclude( node, request, response )
+                );
+            }
+        }
+    }
+
+    private JsonNode createNodeForInclude(
+            JsonNode node,
+            ServletRequest request,
+            ServletResponse response
+    ) throws ServletException, IOException {
+        JsonNode newNode = node;
+        if ( !node.path( INCLUSION_ELEMENT_ATTRIBUTE ).isMissingNode() ) {
+            HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
+            request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() )
+                   .forward( request, copy );
+
+            newNode = mapper.readTree( copy.getCaptureAsString() );
+        }
+        return newNode;
     }
 
     private void filterTree(JsonNode tree, Set<String> includedFields ) {
