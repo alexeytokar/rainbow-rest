@@ -157,15 +157,14 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             ServletRequest request,
             ServletResponse response
     ) throws ServletException, IOException {
-        JsonNode newNode = node;
-        if ( !node.path( INCLUSION_ELEMENT_ATTRIBUTE ).isMissingNode() ) {
-            HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
-            request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() )
-                   .forward( request, copy );
-
-            newNode = mapper.readTree( copy.getCaptureAsString() );
+        if ( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).isMissingNode() ) {
+            return node;
         }
-        return newNode;
+        HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
+        request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() )
+               .forward( request, copy );
+
+        return mapper.readTree( copy.getCaptureAsString() );
     }
 
     private void filterTree(JsonNode tree, Set<String> includedFields ) {
