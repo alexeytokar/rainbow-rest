@@ -14,7 +14,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String DEFAULT_FIELDS_PARAM_NAME = "fields";
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
-    public static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
+    private static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
     private String includeParamName = DEFAULT_INCLUDE_PARAM_NAME;
