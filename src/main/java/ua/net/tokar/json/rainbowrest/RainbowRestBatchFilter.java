@@ -48,6 +48,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
         if (
                 ((HttpServletRequest)request).getMethod().equalsIgnoreCase(BATCH_ENDPOINT_METHOD)
              && ((HttpServletRequest)request).getRequestURI().equalsIgnoreCase(batchEndpointUri)
+             && (response.getContentType() != null && response.getContentType().contains( APPLICATION_JSON ) )
         ) {
             Map<String, String> map = mapper.readValue(request.getInputStream(), Map.class);
 

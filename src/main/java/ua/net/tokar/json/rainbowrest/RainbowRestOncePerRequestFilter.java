@@ -4,6 +4,7 @@ import javax.servlet.*;
 import java.io.IOException;
 
 abstract class RainbowRestOncePerRequestFilter implements Filter {
+    final static String APPLICATION_JSON = "application/json";
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
 
     @Override
