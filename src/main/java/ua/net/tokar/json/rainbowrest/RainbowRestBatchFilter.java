@@ -1,5 +1,6 @@
 package ua.net.tokar.json.rainbowrest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
@@ -48,13 +49,15 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
         if (
                 ((HttpServletRequest)request).getMethod().equalsIgnoreCase(BATCH_ENDPOINT_METHOD)
              && ((HttpServletRequest)request).getRequestURI().equalsIgnoreCase(batchEndpointUri)
-             && (response.getContentType() != null && response.getContentType().contains( APPLICATION_JSON ) )
         ) {
-            Map<String, String> map = mapper.readValue(request.getInputStream(), Map.class);
+            Map<String, String> map = mapper.readValue(
+                    request.getInputStream(),
+                    new TypeReference<Map<String,String>>() {}
+            );
 
             ObjectNode tree = mapper.createObjectNode();
             for (Map.Entry<String, String> stringStringEntry : map.entrySet()) {
-                tree.put(
+                tree.set(
                         stringStringEntry.getKey(),
                         mapper.readTree( new URL(
                                 request.getScheme(),
