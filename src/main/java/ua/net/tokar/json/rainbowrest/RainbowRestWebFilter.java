@@ -139,7 +139,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         if ( !node.isMissingNode() ) {
             if ( node.isArray() ) {
                 ArrayNode newArrayNode = mapper.createArrayNode();
-                for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ++index ) {
+                for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
                     newArrayNode.add( createNodeForInclude( it.next(), request, response ) );
                 }
                 ( (ObjectNode) parent ).set( nodeName, newArrayNode );
@@ -172,16 +172,14 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             for( final Iterator<JsonNode> it = tree.elements(); it.hasNext(); ) {
                 filterTree( it.next(), includedFields );
             }
-        } else {
-            if ( tree.isObject() ) {
-                for (final Iterator<Map.Entry<String,JsonNode>> it = tree.fields(); it.hasNext(); ) {
-                    Map.Entry<String, JsonNode> entry = it.next();
-                    final String key = entry.getKey();
-                    if ( !includedFields.contains( key ) ) {
-                        it.remove();
-                    } else {
-                        filterTree( entry.getValue(), includedFields );
-                    }
+        } else if ( tree.isObject() ) {
+            for ( final Iterator<Map.Entry<String, JsonNode>> it = tree.fields(); it.hasNext(); ) {
+                Map.Entry<String, JsonNode> entry = it.next();
+                final String key = entry.getKey();
+                if ( !includedFields.contains( key ) ) {
+                    it.remove();
+                } else {
+                    filterTree( entry.getValue(), includedFields );
                 }
             }
         }
