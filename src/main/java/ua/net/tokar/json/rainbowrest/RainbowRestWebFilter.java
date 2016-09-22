@@ -15,6 +15,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private static final String DEFAULT_FIELDS_PARAM_NAME = "fields";
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
     private static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
+    private static final String APPLICATION_JSON = "application/json";
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
     private String includeParamName = DEFAULT_INCLUDE_PARAM_NAME;
@@ -68,6 +69,10 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         HtmlResponseWrapper capturingResponseWrapper = new HtmlResponseWrapper( response );
 
         filterChain.doFilter( request, capturingResponseWrapper );
+        if ( response.getContentType() == null ||
+                !response.getContentType().contains( APPLICATION_JSON ) ) {
+            return;
+        }
 
         String includeValue = request.getParameter( includeParamName );
 
