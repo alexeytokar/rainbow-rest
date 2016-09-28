@@ -66,17 +66,16 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        HtmlResponseWrapper capturingResponseWrapper = new HtmlResponseWrapper( response );
-
-        filterChain.doFilter( request, capturingResponseWrapper );
-        if ( response.getContentType() == null ||
-                !response.getContentType().contains( APPLICATION_JSON ) ) {
+        String includeValue = request.getParameter( includeParamName );
+        String fieldsValue = request.getParameter( fieldsParamName );
+        if ( StringUtils.isEmpty( includeValue ) && StringUtils.isEmpty( fieldsValue ) ) {
+            filterChain.doFilter( request, response );
             return;
         }
 
-        String includeValue = request.getParameter( includeParamName );
+        HtmlResponseWrapper capturingResponseWrapper = new HtmlResponseWrapper( response );
+        filterChain.doFilter( request, capturingResponseWrapper );
 
-        String fieldsValue = request.getParameter( fieldsParamName );
         Set<String> fields = new HashSet<>();
         if ( !StringUtils.isEmpty( fieldsValue ) ) {
             fields.addAll( Arrays.asList(
@@ -91,20 +90,16 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             ) );
         }
         String content = capturingResponseWrapper.getCaptureAsString();
-        if ( fields.isEmpty() && include.isEmpty() ) {
-            response.getWriter().write( content );
-        } else {
-            JsonNode tree = mapper.readTree( content );
+        JsonNode tree = mapper.readTree( content );
 
-            if ( !include.isEmpty() ) {
-                processIncludes( tree, include, request, response );
-            }
-            if ( !fields.isEmpty() ) {
-                filterTree( tree, fields );
-            }
-
-            response.getWriter().write( tree.toString() );
+        if ( !include.isEmpty() ) {
+            processIncludes( tree, include, request, response );
         }
+        if ( !fields.isEmpty() ) {
+            filterTree( tree, fields );
+        }
+
+        response.getWriter().write( tree.toString() );
     }
 
     private void processIncludes(
