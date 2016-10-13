@@ -1,6 +1,7 @@
 package ua.net.tokar.json.rainbowrest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
@@ -56,16 +57,19 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             );
 
             ObjectNode tree = mapper.createObjectNode();
-            for (Map.Entry<String, String> stringStringEntry : map.entrySet()) {
-                tree.set(
-                        stringStringEntry.getKey(),
-                        mapper.readTree( new URL(
-                                request.getScheme(),
-                                request.getServerName(),
-                                request.getServerPort(),
-                                stringStringEntry.getValue()
-                        ) )
-                );
+            for ( Map.Entry<String, String> nameToUrl : map.entrySet() ) {
+                JsonNode jn = null;
+                try {
+                    jn = mapper.readTree( new URL(
+                            request.getScheme(),
+                            request.getServerName(),
+                            request.getServerPort(),
+                            nameToUrl.getValue()
+                    ) );
+                } catch ( IOException e ) {
+                    // TODO provide error message
+                }
+                tree.set( nameToUrl.getKey(), jn );
             }
 
             response.getWriter().write(tree.toString());

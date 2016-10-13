@@ -117,7 +117,11 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     }
 
     private void processSingleInclude(
-            JsonNode tree, String[] s, int index, ServletRequest request, ServletResponse response
+            JsonNode tree,
+            String[] s,
+            int index,
+            ServletRequest request,
+            ServletResponse response
     ) throws ServletException, IOException {
         JsonNode parent = tree;
         JsonNode node = tree;
