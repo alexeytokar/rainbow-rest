@@ -193,7 +193,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             for ( final Iterator<Map.Entry<String, JsonNode>> it = tree.fields(); it.hasNext(); ) {
                 Map.Entry<String, JsonNode> entry = it.next();
                 final String key = entry.getKey();
-                if ( !includedFields.isEmpty() && !includedFields.contains( key ) ||
+                if ( ( !includedFields.isEmpty() && !includedFields.contains( key ) ) ||
                         excludedFields.contains( key ) ) {
                     it.remove();
                 } else {
