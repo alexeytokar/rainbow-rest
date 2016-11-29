@@ -15,7 +15,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private static final String DEFAULT_FIELDS_PARAM_NAME = "fields";
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
     private static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
-    private static final String APPLICATION_JSON = "application/json";
+    private static final String EXCLUDE_FIELDS_INIT_SYMBOL = "-";
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
     private String includeParamName = DEFAULT_INCLUDE_PARAM_NAME;
@@ -23,11 +23,11 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     public RainbowRestWebFilter() {
     }
 
-    public RainbowRestWebFilter(String fieldsParamName, String includeParamName) {
-        if ( StringUtils.isNotEmpty(fieldsParamName)) {
+    public RainbowRestWebFilter( String fieldsParamName, String includeParamName ) {
+        if ( StringUtils.isNotEmpty( fieldsParamName ) ) {
             this.fieldsParamName = fieldsParamName;
         }
-        if ( StringUtils.isNotEmpty(includeParamName)) {
+        if ( StringUtils.isNotEmpty( includeParamName ) ) {
             this.includeParamName = includeParamName;
         }
     }
@@ -54,18 +54,22 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     public void init(FilterConfig filterConfig) throws ServletException {
         super.init(filterConfig);
 
-        String fieldsParamNameOverride = filterConfig.getInitParameter(DEFAULT_FIELDS_PARAM_NAME);
-        if ( StringUtils.isNotEmpty(fieldsParamNameOverride) ) {
+        String fieldsParamNameOverride = filterConfig.getInitParameter( DEFAULT_FIELDS_PARAM_NAME );
+        if ( StringUtils.isNotEmpty( fieldsParamNameOverride ) ) {
             fieldsParamName = fieldsParamNameOverride;
         }
-        String includeParamNameOverride = filterConfig.getInitParameter(DEFAULT_INCLUDE_PARAM_NAME);
-        if ( StringUtils.isNotEmpty(includeParamNameOverride)) {
+        String includeParamNameOverride = filterConfig.getInitParameter( DEFAULT_INCLUDE_PARAM_NAME );
+        if ( StringUtils.isNotEmpty( includeParamNameOverride ) ) {
             includeParamName = includeParamNameOverride;
         }
     }
 
     @Override
-    protected void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    protected void doFilterInternal(
+            ServletRequest request,
+            ServletResponse response,
+            FilterChain filterChain
+    ) throws IOException, ServletException {
         String includeValue = request.getParameter( includeParamName );
         String fieldsValue = request.getParameter( fieldsParamName );
         if ( StringUtils.isEmpty( includeValue ) && StringUtils.isEmpty( fieldsValue ) ) {
@@ -76,11 +80,16 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         HtmlResponseWrapper capturingResponseWrapper = new HtmlResponseWrapper( response );
         filterChain.doFilter( request, capturingResponseWrapper );
 
-        Set<String> fields = new HashSet<>();
+        Set<String> includeFields = new HashSet<>();
+        Set<String> excludeFields = new HashSet<>();
         if ( !StringUtils.isEmpty( fieldsValue ) ) {
-            fields.addAll( Arrays.asList(
-                    fieldsValue.split( "," )
-            ) );
+            for ( String field : fieldsValue.split( "," ) ) {
+                if ( field.startsWith( EXCLUDE_FIELDS_INIT_SYMBOL ) ) {
+                    excludeFields.add( field.substring( EXCLUDE_FIELDS_INIT_SYMBOL.length() ) );
+                } else {
+                    includeFields.add( field );
+                }
+            }
         }
 
         Set<String> include = new HashSet<>();
@@ -89,14 +98,14 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
                     includeValue.split( "," )
             ) );
         }
+
         String content = capturingResponseWrapper.getCaptureAsString();
         JsonNode tree = mapper.readTree( content );
-
         if ( !include.isEmpty() ) {
             processIncludes( tree, include, request, response );
         }
-        if ( !fields.isEmpty() ) {
-            filterTree( tree, fields );
+        if ( !includeFields.isEmpty() || !excludeFields.isEmpty() ) {
+            filterTree( tree, includeFields, excludeFields );
         }
 
         response.getWriter().write( tree.toString() );
@@ -171,19 +180,24 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         return mapper.readTree( copy.getCaptureAsString() );
     }
 
-    private void filterTree(JsonNode tree, Set<String> includedFields ) {
+    private void filterTree(
+            JsonNode tree,
+            Set<String> includedFields,
+            Set<String> excludedFields
+    ) {
         if ( tree.isArray() ) {
-            for( final Iterator<JsonNode> it = tree.elements(); it.hasNext(); ) {
-                filterTree( it.next(), includedFields );
+            for ( final Iterator<JsonNode> it = tree.elements(); it.hasNext(); ) {
+                filterTree( it.next(), includedFields, excludedFields );
             }
         } else if ( tree.isObject() ) {
             for ( final Iterator<Map.Entry<String, JsonNode>> it = tree.fields(); it.hasNext(); ) {
                 Map.Entry<String, JsonNode> entry = it.next();
                 final String key = entry.getKey();
-                if ( !includedFields.contains( key ) ) {
+                if ( ( !includedFields.isEmpty() && !includedFields.contains( key ) ) ||
+                        excludedFields.contains( key ) ) {
                     it.remove();
                 } else {
-                    filterTree( entry.getValue(), includedFields );
+                    filterTree( entry.getValue(), includedFields, excludedFields );
                 }
             }
         }
