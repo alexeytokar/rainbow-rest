@@ -18,7 +18,6 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
     private static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
     private static final String EXCLUDE_FIELDS_INIT_SYMBOL = "-";
-    private static final String GET_METHOD = "GET";
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
     private String includeParamName = DEFAULT_INCLUDE_PARAM_NAME;
@@ -177,16 +176,11 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             return node;
         }
 
-        String stringResponse;
-        String url = node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue();
-
         HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
-        request.getRequestDispatcher( url )
+        request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() )
                .forward( new GetHttpServlerRequest( (HttpServletRequest) request ), copy );
 
-        stringResponse = copy.getCaptureAsString();
-
-        return mapper.readTree( stringResponse );
+        return mapper.readTree( copy.getCaptureAsString() );
     }
 
     private void filterTree(
@@ -213,6 +207,8 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     }
 
     private static class GetHttpServlerRequest extends HttpServletRequestWrapper {
+        private static final String GET_METHOD = "GET";
+
         public GetHttpServlerRequest( HttpServletRequest request ) {
             super( request );
         }
