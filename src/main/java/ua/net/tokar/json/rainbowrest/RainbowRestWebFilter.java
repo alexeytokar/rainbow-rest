@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.util.*;
 
@@ -16,6 +18,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
     private static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
     private static final String EXCLUDE_FIELDS_INIT_SYMBOL = "-";
+    private static final String GET_METHOD = "GET";
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
     private String includeParamName = DEFAULT_INCLUDE_PARAM_NAME;
@@ -173,11 +176,17 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         if ( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).isMissingNode() ) {
             return node;
         }
-        HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
-        request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() )
-               .forward( request, copy );
 
-        return mapper.readTree( copy.getCaptureAsString() );
+        String stringResponse;
+        String url = node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue();
+
+        HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
+        request.getRequestDispatcher( url )
+               .forward( new GetHttpServlerRequest( (HttpServletRequest) request ), copy );
+
+        stringResponse = copy.getCaptureAsString();
+
+        return mapper.readTree( stringResponse );
     }
 
     private void filterTree(
@@ -200,6 +209,17 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
                     filterTree( entry.getValue(), includedFields, excludedFields );
                 }
             }
+        }
+    }
+
+    private static class GetHttpServlerRequest extends HttpServletRequestWrapper {
+        public GetHttpServlerRequest( HttpServletRequest request ) {
+            super( request );
+        }
+
+        @Override
+        public String getMethod() {
+            return GET_METHOD;
         }
     }
 }
