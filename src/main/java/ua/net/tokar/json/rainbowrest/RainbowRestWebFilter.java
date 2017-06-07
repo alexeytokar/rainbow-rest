@@ -178,7 +178,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
         HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
         request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() )
-               .forward( new GetHttpServlerRequest( (HttpServletRequest) request ), copy );
+               .forward( new GetHttpServletRequest( (HttpServletRequest) request ), copy );
 
         return mapper.readTree( copy.getCaptureAsString() );
     }
@@ -206,10 +206,10 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         }
     }
 
-    private static class GetHttpServlerRequest extends HttpServletRequestWrapper {
+    private static class GetHttpServletRequest extends HttpServletRequestWrapper {
         private static final String GET_METHOD = "GET";
 
-        public GetHttpServlerRequest( HttpServletRequest request ) {
+        public GetHttpServletRequest( HttpServletRequest request ) {
             super( request );
         }
 
