@@ -1,4 +1,5 @@
 [![Release](https://jitpack.io/v/alexeytokar/rainbow-rest.svg)](https://jitpack.io/#alexeytokar/rainbow-rest)
+![Downloads per month](https://jitpack.io/v/alexeytokar/rainbow-rest/month.svg)
 
 [HowTo add this dependency to your project](https://jitpack.io/#alexeytokar/rainbow-rest)
 # rainbow-rest
