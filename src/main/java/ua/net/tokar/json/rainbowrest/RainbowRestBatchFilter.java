@@ -25,8 +25,8 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
     public RainbowRestBatchFilter() {
     }
 
-    public RainbowRestBatchFilter(String batchEndpointUri) {
-        if (StringUtils.isNotEmpty(batchEndpointUri)) {
+    public RainbowRestBatchFilter( String batchEndpointUri ) {
+        if ( StringUtils.isNotEmpty( batchEndpointUri ) ) {
             this.batchEndpointUri = batchEndpointUri;
         }
     }
@@ -36,7 +36,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
         super.init(filterConfig);
 
         String batchEndpointUriOverride = filterConfig.getInitParameter(BATCH_ENDPOINT_URI_PARAM_NAME);
-        if (StringUtils.isNotEmpty(batchEndpointUriOverride)) {
+        if ( StringUtils.isNotEmpty( batchEndpointUriOverride ) ) {
             batchEndpointUri = batchEndpointUriOverride;
         }
     }
@@ -48,33 +48,38 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             FilterChain filterChain
     ) throws IOException, ServletException {
         if (
-                ((HttpServletRequest)request).getMethod().equalsIgnoreCase(BATCH_ENDPOINT_METHOD)
-             && ((HttpServletRequest)request).getRequestURI().equalsIgnoreCase(batchEndpointUri)
-        ) {
+                !( (HttpServletRequest) request ).getMethod().equalsIgnoreCase(
+                        BATCH_ENDPOINT_METHOD )
+                        || !( (HttpServletRequest) request ).getRequestURI().equalsIgnoreCase(
+                        batchEndpointUri )
+                ) {
+            doFilter( request, response, filterChain );
+        } else {
             Map<String, String> map = mapper.readValue(
                     request.getInputStream(),
                     new TypeReference<Map<String,String>>() {}
             );
 
-            ObjectNode tree = mapper.createObjectNode();
-            for ( Map.Entry<String, String> nameToUrl : map.entrySet() ) {
-                JsonNode jn = null;
-                try {
-                    jn = mapper.readTree( new URL(
-                            request.getScheme(),
-                            request.getServerName(),
-                            request.getServerPort(),
-                            nameToUrl.getValue()
-                    ) );
-                } catch ( IOException e ) {
-                    // TODO provide error message
-                }
-                tree.set( nameToUrl.getKey(), jn );
-            }
+            final ObjectNode tree = mapper.createObjectNode();
 
-            response.getWriter().write(tree.toString());
-        } else {
-            doFilter( request, response, filterChain );
+            map.entrySet()
+               .parallelStream()
+               .forEach( nameToUrl -> {
+                   JsonNode jsonNode = null;
+                   try {
+                       jsonNode = mapper.readTree( new URL(
+                               request.getScheme(),
+                               request.getServerName(),
+                               request.getServerPort(),
+                               nameToUrl.getValue()
+                       ) );
+                   } catch ( IOException e ) {
+                       // TODO provide error message
+                   }
+                   tree.set( nameToUrl.getKey(), jsonNode );
+               } );
+
+            response.getWriter().write( tree.toString() );
         }
     }
 }
