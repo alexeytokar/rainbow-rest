@@ -1,6 +1,8 @@
 [![Release](https://jitpack.io/v/alexeytokar/rainbow-rest.svg)](https://jitpack.io/#alexeytokar/rainbow-rest)
 ![Downloads per month](https://jitpack.io/v/alexeytokar/rainbow-rest/month.svg)
 
+![Travis status](https://api.travis-ci.org/alexeytokar/rainbow-rest.svg)
+
  * [HowTo add this dependency to your project](https://jitpack.io/#alexeytokar/rainbow-rest)
  * Usage examples are available at [Rainbow Rest Sample project](https://github.com/alexeytokar/rainbow-rest-sample)
  
