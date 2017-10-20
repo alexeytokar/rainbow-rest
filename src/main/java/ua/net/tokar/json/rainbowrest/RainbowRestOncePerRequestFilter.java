@@ -47,11 +47,14 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             ServletRequest request,
             ServletResponse response
     ) throws ServletException, IOException {
-        HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
+        HtmlResponseWrapper responseWrapper = new HtmlResponseWrapper( response );
         request.getRequestDispatcher( relativeUrl )
-               .forward( new GetHttpServletRequest( (HttpServletRequest) request ), copy );
+               .forward(
+                       new GetHttpServletRequest( (HttpServletRequest) request ),
+                       responseWrapper
+               );
 
-        return copy.getCaptureAsString();
+        return responseWrapper.getCaptureAsString();
     }
 
     protected abstract void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException;

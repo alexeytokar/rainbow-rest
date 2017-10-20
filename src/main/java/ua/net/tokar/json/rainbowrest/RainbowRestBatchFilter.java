@@ -46,10 +46,10 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             ServletResponse response,
             FilterChain filterChain
     ) throws IOException, ServletException {
-        HttpServletRequest theRequest = (HttpServletRequest) request;
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         if (
-                !theRequest.getMethod().equalsIgnoreCase( BATCH_ENDPOINT_METHOD )
-                        || !theRequest.getRequestURI().equalsIgnoreCase( batchEndpointUri )
+                !httpServletRequest.getMethod().equalsIgnoreCase( BATCH_ENDPOINT_METHOD )
+                        || !httpServletRequest.getRequestURI().equalsIgnoreCase( batchEndpointUri )
                 ) {
             doFilter( request, response, filterChain );
         } else {
