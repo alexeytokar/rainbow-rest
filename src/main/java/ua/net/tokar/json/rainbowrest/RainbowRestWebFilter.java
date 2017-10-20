@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.util.*;
 
@@ -176,11 +174,13 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             return node;
         }
 
-        HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
-        request.getRequestDispatcher( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue() )
-               .forward( new GetHttpServletRequest( (HttpServletRequest) request ), copy );
-
-        return mapper.readTree( copy.getCaptureAsString() );
+        return mapper.readTree(
+                getResponseViaInternalDispatching(
+                        node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue(),
+                        request,
+                        response
+                )
+        );
     }
 
     private void filterTree(
@@ -206,18 +206,6 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         }
     }
 
-    private static class GetHttpServletRequest extends HttpServletRequestWrapper {
-        private static final String GET_METHOD = "GET";
-
-        public GetHttpServletRequest( HttpServletRequest request ) {
-            super( request );
-        }
-
-        @Override
-        public String getMethod() {
-            return GET_METHOD;
-        }
-    }
 }
 
 

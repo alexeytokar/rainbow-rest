@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Map;
 
 public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
@@ -47,11 +46,10 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             ServletResponse response,
             FilterChain filterChain
     ) throws IOException, ServletException {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         if (
-                !( (HttpServletRequest) request ).getMethod().equalsIgnoreCase(
-                        BATCH_ENDPOINT_METHOD )
-                        || !( (HttpServletRequest) request ).getRequestURI().equalsIgnoreCase(
-                        batchEndpointUri )
+                !httpServletRequest.getMethod().equalsIgnoreCase( BATCH_ENDPOINT_METHOD )
+                        || !httpServletRequest.getRequestURI().equalsIgnoreCase( batchEndpointUri )
                 ) {
             doFilter( request, response, filterChain );
         } else {
@@ -67,14 +65,17 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                .forEach( nameToUrl -> {
                    JsonNode jsonNode = null;
                    try {
-                       jsonNode = mapper.readTree( new URL(
-                               request.getScheme(),
-                               request.getServerName(),
-                               request.getServerPort(),
-                               nameToUrl.getValue()
-                       ) );
+                       jsonNode = mapper.readTree(
+                               getResponseViaInternalDispatching(
+                                       nameToUrl.getValue(),
+                                       request,
+                                       response
+                               )
+                       );
                    } catch ( IOException e ) {
                        // TODO provide error message
+                   } catch ( ServletException e ) {
+                       // TODO catch servlet exception
                    }
                    tree.set( nameToUrl.getKey(), jsonNode );
                } );

@@ -1,7 +1,9 @@
-group 'ua.net.tokar'
+group 'com.github.alexeytokar'
+version = "2.3.0"
 
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: "maven"
 
 repositories {
     mavenLocal()
