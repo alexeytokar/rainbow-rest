@@ -217,6 +217,22 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         public String getMethod() {
             return GET_METHOD;
         }
+
+        public String getParameter(String name) {
+            return null;
+        }
+
+        public Map<String, String[]> getParameterMap() {
+            return new TreeMap<>();
+        }
+
+        public Enumeration<String> getParameterNames() {
+            return Collections.emptyEnumeration();
+        }
+
+        public String[] getParameterValues(String name) {
+            return null;
+        }
     }
 }
 
