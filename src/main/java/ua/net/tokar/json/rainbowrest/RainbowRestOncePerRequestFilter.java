@@ -1,6 +1,8 @@
 package ua.net.tokar.json.rainbowrest;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 
 abstract class RainbowRestOncePerRequestFilter implements Filter {
@@ -40,5 +42,30 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         return getClass().getName() + ALREADY_FILTERED_SUFFIX;
     }
 
+    protected String getResponseViaInternalDispatching(
+            String relativeUrl,
+            ServletRequest request,
+            ServletResponse response
+    ) throws ServletException, IOException {
+        HtmlResponseWrapper copy = new HtmlResponseWrapper( response );
+        request.getRequestDispatcher( relativeUrl )
+               .forward( new GetHttpServletRequest( (HttpServletRequest) request ), copy );
+
+        return copy.getCaptureAsString();
+    }
+
     protected abstract void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException;
+
+    private static class GetHttpServletRequest extends HttpServletRequestWrapper {
+        private static final String GET_METHOD = "GET";
+
+        public GetHttpServletRequest( HttpServletRequest request ) {
+            super( request );
+        }
+
+        @Override
+        public String getMethod() {
+            return GET_METHOD;
+        }
+    }
 }
