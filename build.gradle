@@ -1,5 +1,5 @@
 group 'com.github.alexeytokar'
-version = "2.3.0"
+version = "2.3.1"
 
 apply plugin: 'java'
 apply plugin: 'idea'
@@ -17,6 +17,7 @@ dependencies {
     compile 'javax.servlet:javax.servlet-api:3.1.0'
     compile 'com.fasterxml.jackson.core:jackson-core:2.7.3'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.7.3'
+    compile 'org.apache.httpcomponents:httpclient:4.5.3'
     compile 'org.apache.commons:commons-lang3:3.4'
 
     testCompile 'junit:junit:4.12'

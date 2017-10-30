@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
@@ -59,6 +61,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             );
 
             final ObjectNode tree = mapper.createObjectNode();
+            Header[] headers = getHeaders( (HttpServletRequest) request );
 
             map.entrySet()
                .parallelStream()
@@ -67,15 +70,16 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                    try {
                        jsonNode = mapper.readTree(
                                getResponseViaInternalDispatching(
-                                       nameToUrl.getValue(),
-                                       request,
-                                       response
+                                       buildUri( request, nameToUrl.getValue() ),
+                                       headers
                                )
                        );
                    } catch ( IOException e ) {
                        // TODO provide error message
                    } catch ( ServletException e ) {
                        // TODO catch servlet exception
+                   } catch ( URISyntaxException e ) {
+                       // TODO provide error message
                    }
                    tree.set( nameToUrl.getKey(), jsonNode );
                } );
