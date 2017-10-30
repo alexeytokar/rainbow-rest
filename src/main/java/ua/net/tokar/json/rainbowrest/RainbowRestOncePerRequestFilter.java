@@ -1,9 +1,23 @@
 package ua.net.tokar.json.rainbowrest;
 
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
+
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 abstract class RainbowRestOncePerRequestFilter implements Filter {
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
@@ -55,6 +69,36 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
                );
 
         return responseWrapper.getCaptureAsString();
+    }
+
+    protected String getResponseViaInternalDispatching(
+            URI uri,
+            Header[] headers
+    ) throws ServletException, IOException, URISyntaxException {
+        try ( CloseableHttpClient httpClient = HttpClients.createDefault() ) {
+            HttpGet httpGet = new HttpGet( uri );
+            httpGet.setHeaders( headers );
+            HttpEntity entity = httpClient.execute( httpGet ).getEntity();
+            return entity != null ? EntityUtils.toString( entity ) : null;
+        }
+    }
+
+    protected URI buildUri( ServletRequest request, String relativeUrl ) throws URISyntaxException {
+        return new URIBuilder()
+                .setScheme( request.getScheme() )
+                .setHost( request.getServerName() )
+                .setPort( request.getLocalPort() )
+                .setPath( relativeUrl )
+                .build();
+    }
+
+    protected Header[] getHeaders( HttpServletRequest request ) {
+        List<Header> headers = new ArrayList<>();
+        for ( Enumeration<String> e = request.getHeaderNames(); e.hasMoreElements(); ) {
+            String name = e.nextElement();
+            headers.add( new BasicHeader( name, request.getHeader( name ) ) );
+        }
+        return headers.toArray( new Header[headers.size()] );
     }
 
     protected abstract void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException;
