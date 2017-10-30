@@ -76,9 +76,9 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             Header[] headers
     ) throws ServletException, IOException, URISyntaxException {
         try ( CloseableHttpClient httpClient = HttpClients.createDefault() ) {
-            HttpGet httpget = new HttpGet( uri );
-            httpget.setHeaders( headers );
-            HttpEntity entity = httpClient.execute( httpget ).getEntity();
+            HttpGet httpGet = new HttpGet( uri );
+            httpGet.setHeaders( headers );
+            HttpEntity entity = httpClient.execute( httpGet ).getEntity();
             return entity != null ? EntityUtils.toString( entity ) : null;
         }
     }
@@ -98,8 +98,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             String name = e.nextElement();
             headers.add( new BasicHeader( name, request.getHeader( name ) ) );
         }
-        Header[] headersArray = new Header[headers.size()];
-        return headers.toArray( headersArray );
+        return headers.toArray( new Header[headers.size()] );
     }
 
     protected abstract void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException;
