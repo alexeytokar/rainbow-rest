@@ -87,7 +87,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         return new URIBuilder()
                 .setScheme( request.getScheme() )
                 .setHost( request.getServerName() )
-                .setPort( request.getLocalPort() )
+                .setPort( request.getServerPort() )
                 .setPath( relativeUrl )
                 .build();
     }
