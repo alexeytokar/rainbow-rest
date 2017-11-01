@@ -1,5 +1,5 @@
-group 'com.github.alexeytokar'
-version = "2.3.1"
+group 'com.github.ternovoy'
+//version = "2.3.3-SNAPSHOT"
 
 apply plugin: 'java'
 apply plugin: 'idea'
@@ -8,6 +8,7 @@ apply plugin: "maven"
 repositories {
     mavenLocal()
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 sourceCompatibility = 1.8
@@ -19,6 +20,9 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-databind:2.7.3'
     compile 'org.apache.httpcomponents:httpclient:4.5.3'
     compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'org.mockito:mockito-all:1.10.19'
+
+    compile 'com.github.ternovoy:rain-bow:fix_uri_build-SNAPSHOT'
 
     testCompile 'junit:junit:4.12'
 }
