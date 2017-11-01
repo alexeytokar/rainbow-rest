@@ -22,8 +22,6 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'org.mockito:mockito-all:1.10.19'
 
-    compile 'com.github.ternovoy:rain-bow:fix_uri_build-SNAPSHOT'
-
     testCompile 'junit:junit:4.12'
 }
 
