@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -60,22 +61,28 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
 
             final ObjectNode tree = mapper.createObjectNode();
 
-            map.forEach( ( key, value ) -> {
-                JsonNode jsonNode = null;
-                try {
-                    jsonNode = mapper.readTree(
-                            getResponseViaInternalDispatching(
-                                    value,
-                                    request,
-                                    response
-                            )
-                    );
+            Header[] headers = getHeaders( (HttpServletRequest) request );
+
+            map.entrySet()
+               .parallelStream()
+               .forEach( nameToUrl -> {
+                   JsonNode jsonNode = null;
+                   try {
+                       jsonNode = mapper.readTree(
+                               getResponseViaInternalDispatching(
+                                       buildUri( request, nameToUrl.getValue() ),
+                                       headers
+                               )
+                       );
                 } catch ( IOException e ) {
                     // TODO provide error message
-                } catch ( ServletException e ) {
-                    // TODO catch servlet exception
-                }
-                tree.set( key, jsonNode );
+                   } catch ( ServletException e ) {
+                       // TODO catch servlet exception
+                   } catch ( Exception e ) {
+                       //TODO
+                   }
+
+                tree.set( nameToUrl.getKey(), jsonNode );
             } );
 
             response.getWriter().write( tree.toString() );
