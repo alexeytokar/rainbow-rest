@@ -86,8 +86,8 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     protected URI buildUri( ServletRequest request, String relativeUrl ) throws URISyntaxException {
         return new URIBuilder()
                 .setScheme( request.getScheme() )
-                .setHost( request.getServerName() )
-                .setPort( request.getServerPort() )
+                .setHost( request.getLocalName() )
+                .setPort( request.getLocalPort() )
                 .setPath( relativeUrl )
                 .build();
     }
