@@ -2,8 +2,10 @@ package ua.net.tokar.json.rainbowrest;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
@@ -15,6 +17,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -84,11 +87,18 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     }
 
     protected URI buildUri( ServletRequest request, String relativeUrl ) throws URISyntaxException {
+        String path = relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) );
+        List<NameValuePair> params = URLEncodedUtils.parse(
+                new URI( relativeUrl ),
+                Charset.forName( "UTF-8" )
+        );
+
         return new URIBuilder()
                 .setScheme( request.getScheme() )
                 .setHost( request.getLocalName() )
                 .setPort( request.getLocalPort() )
-                .setPath( relativeUrl )
+                .setPath( path )
+                .setParameters( params )
                 .build();
     }
 
