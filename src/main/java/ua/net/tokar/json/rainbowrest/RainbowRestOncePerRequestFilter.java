@@ -87,7 +87,10 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     }
 
     protected URI buildUri( ServletRequest request, String relativeUrl ) throws URISyntaxException {
-        String path = relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) );
+        int questionMarkIndex = relativeUrl.indexOf( '?' );
+        String path = questionMarkIndex != -1 ?
+                relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) )
+                : relativeUrl;
         List<NameValuePair> params = URLEncodedUtils.parse(
                 new URI( relativeUrl ),
                 Charset.forName( "UTF-8" )
