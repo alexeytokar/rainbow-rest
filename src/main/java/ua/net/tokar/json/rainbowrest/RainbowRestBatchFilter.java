@@ -10,7 +10,6 @@ import org.apache.http.Header;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Map;
 
 public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
@@ -61,6 +60,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             );
 
             final ObjectNode tree = mapper.createObjectNode();
+
             Header[] headers = getHeaders( (HttpServletRequest) request );
 
             map.entrySet()
@@ -74,15 +74,16 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                                        headers
                                )
                        );
-                   } catch ( IOException e ) {
-                       // TODO provide error message
+                } catch ( IOException e ) {
+                    // TODO provide error message
                    } catch ( ServletException e ) {
                        // TODO catch servlet exception
-                   } catch ( URISyntaxException e ) {
-                       // TODO provide error message
+                   } catch ( Exception e ) {
+                       //TODO
                    }
-                   tree.set( nameToUrl.getKey(), jsonNode );
-               } );
+
+                tree.set( nameToUrl.getKey(), jsonNode );
+            } );
 
             response.getWriter().write( tree.toString() );
         }
