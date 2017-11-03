@@ -83,7 +83,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                    }
                    tree.set( nameToUrl.getKey(), jsonNode );
                } );
-
+            response.setContentType( "application/json" );
             response.getWriter().write( tree.toString() );
         }
     }
