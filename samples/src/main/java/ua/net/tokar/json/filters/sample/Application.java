@@ -1,4 +1,4 @@
-package ua.net.tokar.json.filters;
+package ua.net.tokar.json.filters.sample;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

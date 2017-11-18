@@ -1,4 +1,4 @@
-package ua.net.tokar.json.filters;
+package ua.net.tokar.json.filters.sample;
 
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;

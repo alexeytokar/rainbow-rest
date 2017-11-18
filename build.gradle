@@ -1,22 +1,70 @@
-group 'com.github.alexeytokar'
-version = "2.3.1"
-
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: "maven"
-
-repositories {
-    mavenLocal()
-    mavenCentral()
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven { url 'http://repo.spring.io/plugins-release' }
+    }
+    dependencies {
+        classpath 'org.owasp:dependency-check-gradle:3.0.1'
+        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+    }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'propdeps'
+    apply plugin: 'propdeps-maven'
+    apply plugin: 'propdeps-idea'
+    apply plugin: 'org.owasp.dependencycheck'
 
-dependencies {
+    dependencyCheck {
+        suppressionFile = "${rootProject.projectDir}/suppression.xml"
+        outputDirectory = "${rootProject.projectDir}/build/security-report/${project.name}"
+        failBuildOnCVSS = 0
 
-}
+        quickQueryTimestamp = false
+        analyzers {
+            nuspecEnabled = false
+            assemblyEnabled = false
+            pathToMono = false
+        }
+    }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.3'
+    dependencies {
+        compile ('javax.validation:validation-api:2.0.0.Final') {
+            force = true
+        }
+        compile ('javax.servlet:javax.servlet-api:4.0.0') {
+            force = true
+        }
+    }
+
+    check.finalizedBy dependencyCheckAnalyze
+
+    configurations {
+        all*.exclude group: 'org.hibernate', module: 'hibernate-validator'
+
+        all {
+            resolutionStrategy.failOnVersionConflict()
+        }
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            url "https://jitpack.io"
+        }
+    }
+
+    tasks.withType(Jar) {
+        destinationDir = file("$rootDir/build/libs")
+    }
+
+    idea {
+        module {
+            downloadSources = true
+        }
+    }
 }

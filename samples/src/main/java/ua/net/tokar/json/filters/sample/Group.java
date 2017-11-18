@@ -1,4 +1,4 @@
-package ua.net.tokar.json.filters;
+package ua.net.tokar.json.filters.sample;
 
 public class Group {
     public final Integer id;

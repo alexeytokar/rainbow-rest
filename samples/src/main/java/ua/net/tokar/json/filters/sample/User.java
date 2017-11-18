@@ -1,4 +1,4 @@
-package ua.net.tokar.json.filters;
+package ua.net.tokar.json.filters.sample;
 
 public class User {
     public final String name;
