@@ -31,7 +31,7 @@ public class ApplicationApiBatchTest {
         requestData.put( "users", "/groups/2/users" );
 
         HttpEntity<Map> request = new HttpEntity<>( requestData );
-        String body = this.restTemplate.postForObject( "/batch", request, String.class );
+        String body = restTemplate.postForObject( "/batch", request, String.class );
 
         assertThat( body, hasJsonPath( "$.group[0].id", is( 2 ) ) );
         assertThat( body, hasJsonPath( "$.group[0].title", is( "bad group" ) ) );

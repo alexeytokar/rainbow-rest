@@ -23,7 +23,7 @@ public class ApplicationApiCompositionTest {
 
     @Test
     public void initialTest() throws Exception {
-        String body = this.restTemplate.getForObject( "/groups", String.class );
+        String body = restTemplate.getForObject( "/groups", String.class );
 
         assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
         assertThat( body, hasJsonPath( "$[0].title", is( "bad group" ) ) );
@@ -37,7 +37,7 @@ public class ApplicationApiCompositionTest {
 
     @Test
     public void fieldsTest() throws Exception {
-        String body = this.restTemplate.getForObject( "/groups?fields=id", String.class );
+        String body = restTemplate.getForObject( "/groups?fields=id", String.class );
 
         assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
         assertThat( body, hasNoJsonPath( "$[0].title" ) );
@@ -46,7 +46,7 @@ public class ApplicationApiCompositionTest {
 
     @Test
     public void includeTest() throws Exception {
-        String body = this.restTemplate.getForObject( "/groups?include=users", String.class );
+        String body = restTemplate.getForObject( "/groups?include=users", String.class );
 
         assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
         assertThat( body, hasJsonPath( "$[0].title", is( "bad group" ) ) );
