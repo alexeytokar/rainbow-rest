@@ -1,2 +1,4 @@
 rootProject.name = 'rainbow-rest'
+include 'filters'
+include 'samples'
 

@@ -1,0 +1,25 @@
+plugins {
+    id 'com.gorylenko.gradle-git-properties' version '1.4.17'
+    id 'org.springframework.boot' version '1.5.8.RELEASE'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'io.spring.platform:platform-bom:Athens-SR6'
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:1.5.8.RELEASE'
+    }
+}
+
+dependencies {
+    compile project(":filters")
+
+    compile "org.springframework.boot:spring-boot-starter-web",
+            "org.springframework.boot:spring-boot-starter-tomcat",
+            "org.springframework.boot:spring-boot-starter-actuator"
+
+    compile group: 'org.hibernate.validator', name: 'hibernate-validator', version: '6.0.2.Final'
+
+    testCompile "junit:junit",
+            "org.springframework.boot:spring-boot-starter-test",
+            "com.jayway.jsonpath:json-path-assert:2.4.0"
+}
