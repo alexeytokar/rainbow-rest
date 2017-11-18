@@ -40,7 +40,7 @@ subprojects {
         }
     }
 
-    //check.finalizedBy dependencyCheckAnalyze
+    check.finalizedBy dependencyCheckAnalyze
 
     configurations {
         all*.exclude group: 'org.hibernate', module: 'hibernate-validator'
