@@ -6,7 +6,7 @@
  * [HowTo add this dependency to your project](https://jitpack.io/#alexeytokar/rainbow-rest)
  
 # rainbow-rest
-Inspired by JsonApi. Replaced GraphQL.
+Inspired by JsonApi. Designed to replace GraphQL.
 
 Rainbow REST is a set of Servlet Http Filters for java which improves already existing JSON REST API with new functionality such as batch requesting, fields filtering and subtree inclusion. 
 
