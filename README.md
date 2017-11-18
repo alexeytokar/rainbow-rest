@@ -7,6 +7,8 @@
  * Usage examples are available at [Rainbow Rest Sample project](https://github.com/alexeytokar/rainbow-rest-sample)
  
 # rainbow-rest
+GraphQL replacement with plain old REST API with all its benefits.
+
 Rainbow REST is a set of Servlet Http Filters for java which improves already existing JSON REST API with new functionality such as batch requesting, fields filtering and subtree inclusion. 
 
 All of the features are accessible by just adding one of the following filters:
