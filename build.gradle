@@ -58,10 +58,6 @@ subprojects {
         }
     }
 
-    tasks.withType(Jar) {
-        destinationDir = file("$rootDir/build/libs")
-    }
-
     idea {
         module {
             downloadSources = true
