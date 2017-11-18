@@ -17,7 +17,7 @@ import static org.junit.Assert.assertThat;
         classes = Application.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-public class ApplicationApiTest {
+public class ApplicationApiCompositionTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
