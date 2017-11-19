@@ -36,6 +36,20 @@ public class ApplicationApiCompositionTest {
     }
 
     @Test
+    public void excludeFieldsTest() throws Exception {
+        String body = restTemplate.getForObject( "/groups?fields=-title", String.class );
+
+        assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
+        assertThat( body, hasJsonPath( "$[0].users.href", is( "/groups/2/users" ) ) );
+        assertThat( body, hasNoJsonPath( "$[0].title" ) );
+
+        assertThat( body, hasJsonPath( "$[1].id", is( 5 ) ) );
+        assertThat( body, hasJsonPath( "$[1].users.href", is( "/groups/5/users" ) ) );
+        assertThat( body, hasNoJsonPath( "$[1].title" ) );
+
+    }
+
+    @Test
     public void fieldsTest() throws Exception {
         String body = restTemplate.getForObject( "/groups?fields=id", String.class );
 
@@ -51,7 +65,24 @@ public class ApplicationApiCompositionTest {
         assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
         assertThat( body, hasJsonPath( "$[0].title", is( "bad group" ) ) );
         assertThat( body, hasJsonPath( "$[0].users[0].name", is( "boss" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[0].friends.href", is( "/users/1/friends" ) ) );
         assertThat( body, hasJsonPath( "$[0].users[1].name", is( "cat" ) ) );
+        assertThat( body, hasNoJsonPath( "$[0].users.href" ) );
+    }
+
+    @Test
+    public void deepInclusionTest() throws Exception {
+        String body = restTemplate.getForObject(
+                "/groups?include=users,users.friends",
+                String.class
+        );
+
+        assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
+        assertThat( body, hasJsonPath( "$[0].title", is( "bad group" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[0].name", is( "boss" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[1].name", is( "cat" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[0].friends[0].name", is( "boss" ) ) );
+        assertThat( body, hasNoJsonPath( "$[0].users[0].friends.href" ) );
         assertThat( body, hasNoJsonPath( "$[0].users.href" ) );
     }
 }
