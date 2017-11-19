@@ -3,7 +3,15 @@
 
 ![Travis status](https://api.travis-ci.org/alexeytokar/rainbow-rest.svg)
 
- * [HowTo add this dependency to your project](https://jitpack.io/#alexeytokar/rainbow-rest)
+# How to add dependency to your project
+```
+<dependency>
+    <groupId>com.github.alexeytokar.rainbow-rest</groupId>
+    <artifactId>filters</artifactId>
+    <version>${rainbow-rest.version}</version>
+</dependency>
+```
+[Other versions and source documentation](https://jitpack.io/#alexeytokar/rainbow-rest)
  
 # rainbow-rest
 Inspired by JsonApi. Designed to replace GraphQL.
