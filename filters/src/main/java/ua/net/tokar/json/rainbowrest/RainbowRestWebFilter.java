@@ -133,7 +133,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         }
     }
 
-    private Void processSingleInclude(
+    private void processSingleInclude(
             JsonNode tree,
             String[] s,
             int index,
@@ -150,7 +150,10 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
                 final int finalIndex = i;
                 for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
                     JsonNode currentNode = it.next();
-                    callables.add( () -> processSingleInclude( currentNode, s, finalIndex, request ) );
+                    callables.add( () -> {
+                        processSingleInclude( currentNode, s, finalIndex, request );
+                        return null;
+                    } );
                 }
                 executeInParallel( callables );
             }
@@ -177,7 +180,6 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
                 );
             }
         }
-        return null;
     }
 
     private JsonNode createNodeForInclude(
