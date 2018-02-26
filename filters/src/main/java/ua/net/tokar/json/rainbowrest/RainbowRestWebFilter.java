@@ -5,12 +5,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger( RainbowRestWebFilter.class );
+
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String DEFAULT_FIELDS_PARAM_NAME = "fields";
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
@@ -102,7 +111,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         String content = capturingResponseWrapper.getCaptureAsString();
         JsonNode tree = mapper.readTree( content );
         if ( !include.isEmpty() ) {
-            processIncludes( tree, include, request, response );
+            processIncludes( tree, include, request );
         }
         if ( !includeFields.isEmpty() || !excludeFields.isEmpty() ) {
             filterTree( tree, includeFields, excludeFields );
@@ -114,23 +123,21 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private void processIncludes(
             JsonNode tree,
             Set<String> include,
-            ServletRequest request,
-            ServletResponse response
+            ServletRequest request
     ) throws ServletException, IOException {
         List<String> inc = new ArrayList<>( include );
         Collections.sort( inc ); // TODO sort parent nodes first. count dots in name
 
         for ( String s : inc ) {
-            processSingleInclude( tree, s.split( "\\." ), 0, request, response );
+            processSingleInclude( tree, s.split( "\\." ), 0, request );
         }
     }
 
-    private void processSingleInclude(
+    private Void processSingleInclude(
             JsonNode tree,
             String[] s,
             int index,
-            ServletRequest request,
-            ServletResponse response
+            ServletRequest request
     ) throws ServletException, IOException {
         JsonNode parent = tree;
         JsonNode node = tree;
@@ -139,9 +146,13 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             nodeName = s[i];
             parent = node;
             if ( node.isArray() ) {
+                List<Callable<Void>> callables = new ArrayList<>();
+                final int finalIndex = i;
                 for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
-                    processSingleInclude( it.next(), s, i, request, response );
+                    JsonNode currentNode = it.next();
+                    callables.add( () -> processSingleInclude( currentNode, s, finalIndex, request ) );
                 }
+                executeInParallel( callables );
             }
             node = node.path( s[i] );
             if ( node.isMissingNode() ) {
@@ -151,36 +162,42 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
         if ( !node.isMissingNode() ) {
             if ( node.isArray() ) {
-                ArrayNode newArrayNode = mapper.createArrayNode();
+                List<Callable<JsonNode>> callables = new ArrayList<>();
                 for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
-                    newArrayNode.add( createNodeForInclude( it.next(), request, response ) );
+                    callables.add( () -> createNodeForInclude( it.next(), request ) );
                 }
+
+                ArrayNode newArrayNode = mapper.createArrayNode();
+                newArrayNode.addAll( executeInParallel( callables ) );
                 ( (ObjectNode) parent ).set( nodeName, newArrayNode );
             } else {
                 ( (ObjectNode) parent ).set(
                         nodeName,
-                        createNodeForInclude( node, request, response )
+                        createNodeForInclude( node, request )
                 );
             }
         }
+        return null;
     }
 
     private JsonNode createNodeForInclude(
             JsonNode node,
-            ServletRequest request,
-            ServletResponse response
-    ) throws ServletException, IOException {
+            ServletRequest request
+    ) throws IOException {
         if ( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).isMissingNode() ) {
             return node;
         }
 
-        return mapper.readTree(
-                getResponseViaInternalDispatching(
-                        node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue(),
-                        request,
-                        response
-                )
-        );
+        Header[] headers = getHeaders( (HttpServletRequest) request );
+        String relativeUrl = node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue();
+        try {
+            return mapper.readTree(
+                    getResponseViaInternalDispatching( buildUri( request, relativeUrl ), headers )
+            );
+        } catch ( URISyntaxException e ) {
+            log.warn( "Cannot build URI for relativeUrl='{}'", relativeUrl );
+            return node;
+        }
     }
 
     private void filterTree(

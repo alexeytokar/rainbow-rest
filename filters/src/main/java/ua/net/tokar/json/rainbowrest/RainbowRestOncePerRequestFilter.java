@@ -21,12 +21,17 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.concurrent.*;
 
 abstract class RainbowRestOncePerRequestFilter implements Filter {
+
+    private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool( 10 );
+    private static final int EXECUTION_TIMEOUT_SECONDS = 10;
+
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init( FilterConfig filterConfig ) throws ServletException {
 
     }
 
@@ -41,16 +46,16 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             ServletResponse response,
             FilterChain filterChain
     ) throws IOException, ServletException {
-        boolean hasAlreadyFilteredAttribute = request.getAttribute(getAlreadyFilteredAttributeName()) != null;
+        boolean hasAlreadyFilteredAttribute = request.getAttribute( getAlreadyFilteredAttributeName() ) != null;
 
-        if (hasAlreadyFilteredAttribute ) {
-            filterChain.doFilter(request, response);
+        if ( hasAlreadyFilteredAttribute ) {
+            filterChain.doFilter( request, response );
         } else {
-            request.setAttribute(getAlreadyFilteredAttributeName(), Boolean.TRUE);
+            request.setAttribute( getAlreadyFilteredAttributeName(), Boolean.TRUE );
             try {
-                doFilterInternal(request, response, filterChain);
+                doFilterInternal( request, response, filterChain );
             } finally {
-                request.removeAttribute(getAlreadyFilteredAttributeName());
+                request.removeAttribute( getAlreadyFilteredAttributeName() );
             }
         }
     }
@@ -77,7 +82,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     protected String getResponseViaInternalDispatching(
             URI uri,
             Header[] headers
-    ) throws ServletException, IOException, URISyntaxException {
+    ) throws IOException, URISyntaxException {
         try ( CloseableHttpClient httpClient = HttpClients.createDefault() ) {
             HttpGet httpGet = new HttpGet( uri );
             httpGet.setHeaders( headers );
@@ -89,8 +94,8 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     protected URI buildUri( ServletRequest request, String relativeUrl ) throws URISyntaxException {
         int questionMarkIndex = relativeUrl.indexOf( '?' );
         String path = questionMarkIndex != -1
-                ? relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) )
-                : relativeUrl;
+                      ? relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) )
+                      : relativeUrl;
         List<NameValuePair> params = URLEncodedUtils.parse(
                 new URI( relativeUrl ),
                 Charset.forName( "UTF-8" )
@@ -114,7 +119,34 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         return headers.toArray( new Header[headers.size()] );
     }
 
-    protected abstract void doFilterInternal(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException;
+    protected abstract void doFilterInternal(
+            ServletRequest request,
+            ServletResponse response,
+            FilterChain filterChain
+    ) throws IOException, ServletException;
+
+    protected <T> List<T> executeInParallel(
+            List<Callable<T>> callables
+    ) {
+        List<Future<T>> futures = new ArrayList<>();
+        callables.forEach( c -> futures.add( EXECUTOR_SERVICE.submit( c ) ) );
+
+        List<T> result = new ArrayList<>();
+        for ( Future<T> future : futures ) {
+            try {
+                result.add( future.get( EXECUTION_TIMEOUT_SECONDS, TimeUnit.SECONDS ) );
+            } catch ( InterruptedException e ) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException( e );
+            } catch ( ExecutionException e ) {
+                throw new RuntimeException( e.getCause() );
+            } catch ( TimeoutException e ) {
+                future.cancel( true );
+                throw new RuntimeException( e );
+            }
+        }
+        return result;
+    }
 
     private static class GetHttpServletRequest extends HttpServletRequestWrapper {
         private static final String GET_METHOD = "GET";
