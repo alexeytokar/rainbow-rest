@@ -13,6 +13,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -81,7 +82,11 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                            try {
                                jsonNode = mapper.readTree(
                                        getResponseViaInternalDispatching(
-                                               buildUri( request, relativeUrl ),
+                                               buildUri(
+                                                       request,
+                                                       relativeUrl,
+                                                       Collections.emptyList()
+                                               ),
                                                headers
                                        )
                                );

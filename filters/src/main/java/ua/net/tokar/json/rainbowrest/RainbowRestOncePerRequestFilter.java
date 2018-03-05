@@ -91,15 +91,21 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         }
     }
 
-    protected URI buildUri( ServletRequest request, String relativeUrl ) throws URISyntaxException {
+    protected URI buildUri(
+            ServletRequest request,
+            String relativeUrl,
+            List<NameValuePair> requestParamsFromInclude
+    ) throws URISyntaxException {
         int questionMarkIndex = relativeUrl.indexOf( '?' );
         String path = questionMarkIndex != -1
-                      ? relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) )
-                      : relativeUrl;
-        List<NameValuePair> params = URLEncodedUtils.parse(
+                ? relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) )
+                : relativeUrl;
+        List<NameValuePair> params = new ArrayList<>();
+        params.addAll( URLEncodedUtils.parse(
                 new URI( relativeUrl ),
                 Charset.forName( "UTF-8" )
-        );
+        ) );
+        params.addAll( requestParamsFromInclude );
 
         return new URIBuilder()
                 .setScheme( request.getScheme() )

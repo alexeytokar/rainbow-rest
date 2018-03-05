@@ -85,4 +85,27 @@ public class ApplicationApiCompositionTest {
         assertThat( body, hasNoJsonPath( "$[0].users[0].friends.href" ) );
         assertThat( body, hasNoJsonPath( "$[0].users.href" ) );
     }
+
+    @Test
+    public void includeWithRequestParamsTest() throws Exception {
+        String usersParams = "{offset:1,limit:2}";
+        String friendsParams = "{offset:2,limit:1}";
+        String body = restTemplate.getForObject(
+                "/groups?include=users{usersParams},users.friends{friendsParams}",
+                String.class,
+                usersParams,
+                friendsParams
+        );
+
+        assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
+        assertThat( body, hasJsonPath( "$[0].title", is( "bad group" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[0].name", is( "cat" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[1].name", is( "dog" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[0].friends[0].name", is( "dog" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[1].friends[0].name", is( "dog" ) ) );
+        assertThat( body, hasNoJsonPath( "$[0].users[0].friends.href" ) );
+        assertThat( body, hasNoJsonPath( "$[0].users[1].friends.href" ) );
+        assertThat( body, hasNoJsonPath( "$[0].users.href" ) );
+
+    }
 }
