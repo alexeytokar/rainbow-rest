@@ -2,10 +2,13 @@ package ua.net.tokar.json.filters.sample;
 
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 public class GroupsController {
@@ -19,23 +22,33 @@ public class GroupsController {
 
     @RequestMapping( "/groups/{id}/users" )
     public List<User> usersOfAGroup(
-            @PathVariable Integer id
+            @PathVariable Integer id,
+            @RequestParam( defaultValue = "3" ) int limit,
+            @RequestParam( defaultValue = "0" ) int offset
     ) {
-        return Arrays.asList(
+        return Stream.of(
                 new User( "boss", new Link( "/users/1/friends", "friends" ) ),
                 new User( "cat", new Link( "/users/2/friends", "friends" ) ),
                 new User( "dog", new Link( "/users/42/friends", "friends" ) )
-        );
+        )
+                     .skip( offset )
+                     .limit( limit )
+                     .collect( Collectors.toList() );
     }
 
     @RequestMapping( "/users/{id}/friends" )
     public List<User> getFriends(
-            @PathVariable Integer id
+            @PathVariable Integer id,
+            @RequestParam( defaultValue = "3" ) int limit,
+            @RequestParam( defaultValue = "0" ) int offset
     ) {
-        return Arrays.asList(
+        return Stream.of(
                 new User( "boss", new Link( "/users/1/friends", "friends" ) ),
                 new User( "cat", new Link( "/users/2/friends", "friends" ) ),
                 new User( "dog", new Link( "/users/42/friends", "friends" ) )
-        );
+        )
+                     .skip( offset )
+                     .limit( limit )
+                     .collect( Collectors.toList() );
     }
 }

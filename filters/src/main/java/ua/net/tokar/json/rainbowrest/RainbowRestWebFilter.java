@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,9 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
@@ -25,6 +29,8 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
     private static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
     private static final String EXCLUDE_FIELDS_INIT_SYMBOL = "-";
+    private static final Pattern INCLUDES_PATTERN = Pattern.compile( "([^,{}]+)(\\{(.+?)})*", Pattern.CASE_INSENSITIVE);
+    private static final Comparator<Include> INCLUDE_PARTS_COMPARATOR = Comparator.comparing( Include::getIncludeFieldName );
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
     private String includeParamName = DEFAULT_INCLUDE_PARAM_NAME;
@@ -101,11 +107,12 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             }
         }
 
-        Set<String> include = new HashSet<>();
+        List<Include> include = new ArrayList<>();
         if ( !StringUtils.isEmpty( includeValue ) ) {
-            include.addAll( Arrays.asList(
-                    includeValue.split( "," )
-            ) );
+            Matcher matcher = INCLUDES_PATTERN.matcher( includeValue);
+            while (matcher.find()) {
+                include.add( new Include( matcher.group( 1 ), matcher.group( 3 ) ) );
+            }
         }
 
         String content = capturingResponseWrapper.getCaptureAsString();
@@ -122,14 +129,14 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
     private void processIncludes(
             JsonNode tree,
-            Set<String> include,
+            Collection<Include> include,
             ServletRequest request
-    ) throws ServletException, IOException {
-        List<String> inc = new ArrayList<>( include );
-        Collections.sort( inc ); // TODO sort parent nodes first. count dots in name
+    ) throws IOException {
+        List<Include> inc = new ArrayList<>( include );
+        inc.sort( INCLUDE_PARTS_COMPARATOR ); // TODO sort parent nodes first. count dots in name
 
-        for ( String s : inc ) {
-            processSingleInclude( tree, s.split( "\\." ), 0, request );
+        for ( Include part : inc ) {
+            processSingleInclude( tree, part.getIncludeFieldName().split( "\\." ), 0, request, part.getRequestParams() );
         }
     }
 
@@ -137,8 +144,9 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             JsonNode tree,
             String[] s,
             int index,
-            ServletRequest request
-    ) throws ServletException, IOException {
+            ServletRequest request,
+            Collection<Param> requestParamsFromInclude
+    ) throws IOException {
         JsonNode parent = tree;
         JsonNode node = tree;
         String nodeName = "";
@@ -151,7 +159,13 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
                 for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
                     JsonNode currentNode = it.next();
                     callables.add( () -> {
-                        processSingleInclude( currentNode, s, finalIndex, request );
+                        processSingleInclude(
+                                currentNode,
+                                s,
+                                finalIndex,
+                                request,
+                                requestParamsFromInclude
+                        );
                         return null;
                     } );
                 }
@@ -167,7 +181,11 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             if ( node.isArray() ) {
                 List<Callable<JsonNode>> callables = new ArrayList<>();
                 for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
-                    callables.add( () -> createNodeForInclude( it.next(), request ) );
+                    callables.add( () -> createNodeForInclude(
+                            it.next(),
+                            request,
+                            requestParamsFromInclude
+                    ) );
                 }
 
                 ArrayNode newArrayNode = mapper.createArrayNode();
@@ -176,7 +194,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             } else {
                 ( (ObjectNode) parent ).set(
                         nodeName,
-                        createNodeForInclude( node, request )
+                        createNodeForInclude( node, request, requestParamsFromInclude )
                 );
             }
         }
@@ -184,7 +202,8 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
     private JsonNode createNodeForInclude(
             JsonNode node,
-            ServletRequest request
+            ServletRequest request,
+            Collection<Param> requestParamsFromInclude
     ) throws IOException {
         if ( node.path( INCLUSION_ELEMENT_ATTRIBUTE ).isMissingNode() ) {
             return node;
@@ -194,7 +213,16 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         String relativeUrl = node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue();
         try {
             return mapper.readTree(
-                    getResponseViaInternalDispatching( buildUri( request, relativeUrl ), headers )
+                    getResponseViaInternalDispatching( buildUri(
+                            request,
+                            relativeUrl,
+                            requestParamsFromInclude.stream()
+                                                    .map( param -> new BasicNameValuePair(
+                                                            param.getName(),
+                                                            param.getValue()
+                                                    ) )
+                                                    .collect( Collectors.toList() )
+                    ), headers )
             );
         } catch ( URISyntaxException e ) {
             log.warn( "Cannot build URI for relativeUrl='{}'", relativeUrl );
