@@ -2,15 +2,13 @@ package ua.net.tokar.json.rainbowrest;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Include {
 
     private final String includeFieldName;
-    private final List<Param> requestParams = new ArrayList<>();
+    private final Collection<Param> requestParams = new ArrayList<>();
 
     public Include(
             String includeFieldName,
@@ -22,7 +20,7 @@ public class Include {
         }
     }
 
-    private List<Param> parseRequestParamsFromInclude( String requestParams ) {
+    private Collection<Param> parseRequestParamsFromInclude( String requestParams ) {
         return Arrays.stream( requestParams.split( "," ) )
                      .map( param -> {
                          String[] nameValue = param.split( ":" );
@@ -38,7 +36,7 @@ public class Include {
         return includeFieldName;
     }
 
-    public List<Param> getRequestParams() {
-        return requestParams;
+    public Collection<Param> getRequestParams() {
+        return Collections.unmodifiableCollection( requestParams );
     }
 }
