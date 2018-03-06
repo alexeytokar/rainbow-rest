@@ -7,6 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.net.URI;
+
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
 import static org.hamcrest.Matchers.is;
@@ -88,13 +90,11 @@ public class ApplicationApiCompositionTest {
 
     @Test
     public void includeWithRequestParamsTest() throws Exception {
-        String usersParams = "{offset:1,limit:2}";
-        String friendsParams = "{offset:2,limit:1}";
         String body = restTemplate.getForObject(
-                "/groups?include=users{usersParams},users.friends{friendsParams}",
-                String.class,
-                usersParams,
-                friendsParams
+                getURIForRestTemplate(
+                        "/groups?include=users{offset:1,limit:2},users.friends{offset:2,limit:1}"
+                ),
+                String.class
         );
 
         assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
@@ -107,5 +107,9 @@ public class ApplicationApiCompositionTest {
         assertThat( body, hasNoJsonPath( "$[0].users[1].friends.href" ) );
         assertThat( body, hasNoJsonPath( "$[0].users.href" ) );
 
+    }
+
+    private URI getURIForRestTemplate( String url ) {
+        return URI.create( url.replaceAll( "\\{", "%7B" ).replaceAll( "}", "%7D" ) );
     }
 }

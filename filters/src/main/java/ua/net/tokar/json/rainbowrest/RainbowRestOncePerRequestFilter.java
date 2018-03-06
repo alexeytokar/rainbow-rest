@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.*;
@@ -94,7 +95,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     protected URI buildUri(
             ServletRequest request,
             String relativeUrl,
-            List<NameValuePair> requestParamsFromInclude
+            Collection<NameValuePair> additionalRequestParams
     ) throws URISyntaxException {
         int questionMarkIndex = relativeUrl.indexOf( '?' );
         String path = questionMarkIndex != -1
@@ -105,7 +106,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
                 new URI( relativeUrl ),
                 Charset.forName( "UTF-8" )
         ) );
-        params.addAll( requestParamsFromInclude );
+        params.addAll( additionalRequestParams );
 
         return new URIBuilder()
                 .setScheme( request.getScheme() )
