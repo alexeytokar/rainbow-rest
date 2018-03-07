@@ -91,9 +91,7 @@ public class ApplicationApiCompositionTest {
     @Test
     public void includeWithRequestParamsTest() throws Exception {
         String body = restTemplate.getForObject(
-                getURIForRestTemplate(
-                        "/groups?include=users{offset:1,limit:2},users.friends{offset:2,limit:1}"
-                ),
+                "/groups?include=users(offset:1,limit:2),users.friends(offset:2,limit:1)",
                 String.class
         );
 
@@ -109,7 +107,4 @@ public class ApplicationApiCompositionTest {
 
     }
 
-    private URI getURIForRestTemplate( String url ) {
-        return URI.create( url.replaceAll( "\\{", "%7B" ).replaceAll( "}", "%7D" ) );
-    }
 }

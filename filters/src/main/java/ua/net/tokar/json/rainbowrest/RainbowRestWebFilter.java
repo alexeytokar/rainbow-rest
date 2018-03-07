@@ -29,7 +29,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     private static final String DEFAULT_INCLUDE_PARAM_NAME = "include";
     private static final String INCLUSION_ELEMENT_ATTRIBUTE = "href";
     private static final String EXCLUDE_FIELDS_INIT_SYMBOL = "-";
-    private static final Pattern INCLUDES_PATTERN = Pattern.compile( "([^,{}]+)(\\{(.+?)})*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INCLUDES_PATTERN = Pattern.compile( "([^,()]+)(\\((.+?)\\))*", Pattern.CASE_INSENSITIVE);
     private static final Comparator<Include> INCLUDE_PARTS_COMPARATOR = Comparator.comparing( Include::getIncludeFieldName );
 
     private String fieldsParamName = DEFAULT_FIELDS_PARAM_NAME;
