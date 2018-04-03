@@ -47,6 +47,17 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         }
     }
 
+    public RainbowRestWebFilter(
+            int numberOfThreads,
+            int executionTimeoutSeconds,
+            String fieldsParamName,
+            String includeParamName
+    ) {
+        super( numberOfThreads, executionTimeoutSeconds );
+        this.fieldsParamName = fieldsParamName;
+        this.includeParamName = includeParamName;
+    }
+
     /**
      * If you want to override default names of params for fields filtering and inclusion,
      * you could  provide new names via init-params in web.xml
