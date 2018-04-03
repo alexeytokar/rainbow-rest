@@ -41,6 +41,15 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
         }
     }
 
+    public RainbowRestBatchFilter(
+            int numberOfThreads,
+            int executionTimeoutSeconds,
+            String batchEndpointUri
+    ) {
+        super( numberOfThreads, executionTimeoutSeconds );
+        this.batchEndpointUri = batchEndpointUri;
+    }
+
     @Override
     public void init( FilterConfig filterConfig ) throws ServletException {
         super.init( filterConfig );

@@ -1,5 +1,6 @@
 package ua.net.tokar.json.rainbowrest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
@@ -26,14 +27,43 @@ import java.util.concurrent.*;
 
 abstract class RainbowRestOncePerRequestFilter implements Filter {
 
-    private static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool( 10 );
-    private static final int EXECUTION_TIMEOUT_SECONDS = 10;
-
+    private static final int DEFAULT_NUMBER_OF_THREADS = 10;
+    private static final int DEFAULT_EXECUTION_TIMEOUT_SECONDS = 10;
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
+    private static final String DEFAULT_NUMBER_OF_THREADS_PARAM_NAME = "numberOfThreads";
+    private static final String DEFAULT_EXECUTION_TIMEOUT_SECONDS_PARAM_NAME = "executionTimeoutSeconds";
+
+    private ExecutorService executorService;
+    private int executionTimeoutSeconds;
+
+    public RainbowRestOncePerRequestFilter() {
+        this.executorService = Executors.newFixedThreadPool( DEFAULT_NUMBER_OF_THREADS );
+        this.executionTimeoutSeconds = DEFAULT_EXECUTION_TIMEOUT_SECONDS;
+    }
+
+    public RainbowRestOncePerRequestFilter(
+            int numberOfThreads,
+            int executionTimeoutSeconds
+    ) {
+        this.executorService = Executors.newFixedThreadPool( numberOfThreads );
+        this.executionTimeoutSeconds = executionTimeoutSeconds;
+    }
 
     @Override
     public void init( FilterConfig filterConfig ) throws ServletException {
+        String numberOfThreadsOverride =
+                filterConfig.getInitParameter( DEFAULT_NUMBER_OF_THREADS_PARAM_NAME );
+        if ( StringUtils.isNotEmpty( numberOfThreadsOverride ) ) {
+            executorService.shutdownNow();
 
+            executorService = Executors
+                    .newFixedThreadPool( Integer.valueOf( numberOfThreadsOverride ) );
+        }
+        String executionTimeoutSecondsOverride =
+                filterConfig.getInitParameter( DEFAULT_EXECUTION_TIMEOUT_SECONDS_PARAM_NAME );
+        if ( StringUtils.isNotEmpty( executionTimeoutSecondsOverride ) ) {
+            executionTimeoutSeconds = Integer.valueOf( executionTimeoutSecondsOverride );
+        }
     }
 
     @Override
@@ -136,12 +166,12 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             List<Callable<T>> callables
     ) {
         List<Future<T>> futures = new ArrayList<>();
-        callables.forEach( c -> futures.add( EXECUTOR_SERVICE.submit( c ) ) );
+        callables.forEach( c -> futures.add( executorService.submit( c ) ) );
 
         List<T> result = new ArrayList<>();
         for ( Future<T> future : futures ) {
             try {
-                result.add( future.get( EXECUTION_TIMEOUT_SECONDS, TimeUnit.SECONDS ) );
+                result.add( future.get( executionTimeoutSeconds, TimeUnit.SECONDS ) );
             } catch ( InterruptedException e ) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException( e );
