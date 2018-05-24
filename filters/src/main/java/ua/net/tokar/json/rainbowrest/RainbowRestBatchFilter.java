@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +49,16 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
         this.batchEndpointUri = batchEndpointUri;
     }
 
+    public RainbowRestBatchFilter(
+            int numberOfThreads,
+            int executionTimeoutSeconds,
+            HttpClient httpClient,
+            String batchEndpointUri
+    ) {
+        super( numberOfThreads, executionTimeoutSeconds, httpClient );
+        this.batchEndpointUri = batchEndpointUri;
+    }
+
     @Override
     public void init( FilterConfig filterConfig ) throws ServletException {
         super.init( filterConfig );
@@ -80,7 +89,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             );
 
             final ObjectNode tree = mapper.createObjectNode();
-            Header[] headers = getHeaders( (HttpServletRequest) request );
+            List<HttpHeader> headers = getHeaders( (HttpServletRequest) request );
 
             List<Callable<JsonNodeResult>> callables =
                     map.entrySet()

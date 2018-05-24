@@ -1,16 +1,9 @@
 package ua.net.tokar.json.rainbowrest;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.util.EntityUtils;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -35,18 +28,31 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
 
     private ExecutorService executorService;
     private int executionTimeoutSeconds;
+    private HttpClient httpClient;
 
     public RainbowRestOncePerRequestFilter() {
-        this.executorService = Executors.newFixedThreadPool( DEFAULT_NUMBER_OF_THREADS );
-        this.executionTimeoutSeconds = DEFAULT_EXECUTION_TIMEOUT_SECONDS;
+        this(
+                DEFAULT_NUMBER_OF_THREADS,
+                DEFAULT_EXECUTION_TIMEOUT_SECONDS,
+                new BasicHttpClient()
+        );
     }
 
     public RainbowRestOncePerRequestFilter(
             int numberOfThreads,
             int executionTimeoutSeconds
     ) {
+        this( numberOfThreads, executionTimeoutSeconds, new BasicHttpClient() );
+    }
+
+    public RainbowRestOncePerRequestFilter(
+            int numberOfThreads,
+            int executionTimeoutSeconds,
+            HttpClient httpClient
+    ) {
         this.executorService = Executors.newFixedThreadPool( numberOfThreads );
         this.executionTimeoutSeconds = executionTimeoutSeconds;
+        this.httpClient = httpClient;
     }
 
     @Override
@@ -112,14 +118,9 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
 
     protected String getResponseViaInternalDispatching(
             URI uri,
-            Header[] headers
+            List<HttpHeader> headers
     ) throws IOException, URISyntaxException {
-        try ( CloseableHttpClient httpClient = HttpClients.createDefault() ) {
-            HttpGet httpGet = new HttpGet( uri );
-            httpGet.setHeaders( headers );
-            HttpEntity entity = httpClient.execute( httpGet ).getEntity();
-            return entity != null ? EntityUtils.toString( entity ) : null;
-        }
+        return httpClient.getResponseBody( uri, headers );
     }
 
     protected URI buildUri(
@@ -147,13 +148,13 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
                 .build();
     }
 
-    protected Header[] getHeaders( HttpServletRequest request ) {
-        List<Header> headers = new ArrayList<>();
+    protected List<HttpHeader> getHeaders( HttpServletRequest request ) {
+        List<HttpHeader> headers = new ArrayList<>();
         for ( Enumeration<String> e = request.getHeaderNames(); e.hasMoreElements(); ) {
             String name = e.nextElement();
-            headers.add( new BasicHeader( name, request.getHeader( name ) ) );
+            headers.add( new BasicHttpHeader( name, request.getHeader( name ) ) );
         }
-        return headers.toArray( new Header[headers.size()] );
+        return headers;
     }
 
     protected abstract void doFilterInternal(
