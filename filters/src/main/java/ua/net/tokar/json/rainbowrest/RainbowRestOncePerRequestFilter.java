@@ -23,7 +23,6 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     private static final int DEFAULT_NUMBER_OF_THREADS = 10;
     private static final int DEFAULT_EXECUTION_TIMEOUT_SECONDS = 10;
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
-    private static final String DEFAULT_NUMBER_OF_THREADS_PARAM_NAME = "numberOfThreads";
     private static final String DEFAULT_EXECUTION_TIMEOUT_SECONDS_PARAM_NAME = "executionTimeoutSeconds";
 
     private ExecutorService executorService;
@@ -32,39 +31,41 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
 
     public RainbowRestOncePerRequestFilter() {
         this(
-                DEFAULT_NUMBER_OF_THREADS,
+                Executors.newFixedThreadPool( DEFAULT_NUMBER_OF_THREADS ),
                 DEFAULT_EXECUTION_TIMEOUT_SECONDS,
                 new BasicHttpClient()
         );
     }
 
     public RainbowRestOncePerRequestFilter(
-            int numberOfThreads,
+            ExecutorService executorService,
             int executionTimeoutSeconds
     ) {
-        this( numberOfThreads, executionTimeoutSeconds, new BasicHttpClient() );
+        this( executorService, executionTimeoutSeconds, new BasicHttpClient() );
     }
 
     public RainbowRestOncePerRequestFilter(
-            int numberOfThreads,
+            HttpClient httpClient
+    ) {
+        this(
+                Executors.newFixedThreadPool( DEFAULT_NUMBER_OF_THREADS ),
+                DEFAULT_EXECUTION_TIMEOUT_SECONDS,
+                httpClient
+        );
+    }
+
+    public RainbowRestOncePerRequestFilter(
+            ExecutorService executorService,
             int executionTimeoutSeconds,
             HttpClient httpClient
     ) {
-        this.executorService = Executors.newFixedThreadPool( numberOfThreads );
+        this.executorService = executorService;
         this.executionTimeoutSeconds = executionTimeoutSeconds;
         this.httpClient = httpClient;
     }
 
     @Override
     public void init( FilterConfig filterConfig ) throws ServletException {
-        String numberOfThreadsOverride =
-                filterConfig.getInitParameter( DEFAULT_NUMBER_OF_THREADS_PARAM_NAME );
-        if ( StringUtils.isNotEmpty( numberOfThreadsOverride ) ) {
-            executorService.shutdownNow();
-
-            executorService = Executors
-                    .newFixedThreadPool( Integer.valueOf( numberOfThreadsOverride ) );
-        }
         String executionTimeoutSecondsOverride =
                 filterConfig.getInitParameter( DEFAULT_EXECUTION_TIMEOUT_SECONDS_PARAM_NAME );
         if ( StringUtils.isNotEmpty( executionTimeoutSecondsOverride ) ) {

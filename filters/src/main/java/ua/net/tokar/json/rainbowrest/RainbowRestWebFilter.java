@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,23 +48,34 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     }
 
     public RainbowRestWebFilter(
-            int numberOfThreads,
+            ExecutorService executorService,
             int executionTimeoutSeconds,
             String fieldsParamName,
             String includeParamName
     ) {
-        super( numberOfThreads, executionTimeoutSeconds );
+        super( executorService, executionTimeoutSeconds );
         this.fieldsParamName = fieldsParamName;
         this.includeParamName = includeParamName;
     }
+
     public RainbowRestWebFilter(
-            int numberOfThreads,
+            HttpClient httpClient,
+            String fieldsParamName,
+            String includeParamName
+    ) {
+        super( httpClient );
+        this.fieldsParamName = fieldsParamName;
+        this.includeParamName = includeParamName;
+    }
+
+    public RainbowRestWebFilter(
+            ExecutorService executorService,
             int executionTimeoutSeconds,
             HttpClient httpClient,
             String fieldsParamName,
             String includeParamName
     ) {
-        super( numberOfThreads, executionTimeoutSeconds, httpClient );
+        super( executorService, executionTimeoutSeconds, httpClient );
         this.fieldsParamName = fieldsParamName;
         this.includeParamName = includeParamName;
     }

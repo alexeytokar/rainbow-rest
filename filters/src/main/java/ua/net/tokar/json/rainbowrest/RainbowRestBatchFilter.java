@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
@@ -41,21 +42,30 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
     }
 
     public RainbowRestBatchFilter(
-            int numberOfThreads,
+            ExecutorService executorService,
             int executionTimeoutSeconds,
             String batchEndpointUri
     ) {
-        super( numberOfThreads, executionTimeoutSeconds );
+        super( executorService, executionTimeoutSeconds );
         this.batchEndpointUri = batchEndpointUri;
     }
 
     public RainbowRestBatchFilter(
-            int numberOfThreads,
+            HttpClient httpClient,
+            String batchEndpointUri
+    ) {
+        super( httpClient );
+        this.batchEndpointUri = batchEndpointUri;
+    }
+
+
+    public RainbowRestBatchFilter(
+            ExecutorService executorService,
             int executionTimeoutSeconds,
             HttpClient httpClient,
             String batchEndpointUri
     ) {
-        super( numberOfThreads, executionTimeoutSeconds, httpClient );
+        super( executorService, executionTimeoutSeconds, httpClient );
         this.batchEndpointUri = batchEndpointUri;
     }
 
