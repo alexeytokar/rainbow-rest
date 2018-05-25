@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +15,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -48,16 +48,37 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
     }
 
     public RainbowRestWebFilter(
-            int numberOfThreads,
+            ExecutorService executorService,
             int executionTimeoutSeconds,
             String fieldsParamName,
             String includeParamName
     ) {
-        super( numberOfThreads, executionTimeoutSeconds );
+        super( executorService, executionTimeoutSeconds );
         this.fieldsParamName = fieldsParamName;
         this.includeParamName = includeParamName;
     }
 
+    public RainbowRestWebFilter(
+            HttpClient httpClient,
+            String fieldsParamName,
+            String includeParamName
+    ) {
+        super( httpClient );
+        this.fieldsParamName = fieldsParamName;
+        this.includeParamName = includeParamName;
+    }
+
+    public RainbowRestWebFilter(
+            ExecutorService executorService,
+            int executionTimeoutSeconds,
+            HttpClient httpClient,
+            String fieldsParamName,
+            String includeParamName
+    ) {
+        super( executorService, executionTimeoutSeconds, httpClient );
+        this.fieldsParamName = fieldsParamName;
+        this.includeParamName = includeParamName;
+    }
     /**
      * If you want to override default names of params for fields filtering and inclusion,
      * you could  provide new names via init-params in web.xml
@@ -220,7 +241,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             return node;
         }
 
-        Header[] headers = getHeaders( (HttpServletRequest) request );
+        List<HttpHeader> headers = getHeaders( (HttpServletRequest) request );
         String relativeUrl = node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue();
         try {
             return mapper.readTree(

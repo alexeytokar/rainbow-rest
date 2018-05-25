@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
@@ -42,11 +42,30 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
     }
 
     public RainbowRestBatchFilter(
-            int numberOfThreads,
+            ExecutorService executorService,
             int executionTimeoutSeconds,
             String batchEndpointUri
     ) {
-        super( numberOfThreads, executionTimeoutSeconds );
+        super( executorService, executionTimeoutSeconds );
+        this.batchEndpointUri = batchEndpointUri;
+    }
+
+    public RainbowRestBatchFilter(
+            HttpClient httpClient,
+            String batchEndpointUri
+    ) {
+        super( httpClient );
+        this.batchEndpointUri = batchEndpointUri;
+    }
+
+
+    public RainbowRestBatchFilter(
+            ExecutorService executorService,
+            int executionTimeoutSeconds,
+            HttpClient httpClient,
+            String batchEndpointUri
+    ) {
+        super( executorService, executionTimeoutSeconds, httpClient );
         this.batchEndpointUri = batchEndpointUri;
     }
 
@@ -80,7 +99,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             );
 
             final ObjectNode tree = mapper.createObjectNode();
-            Header[] headers = getHeaders( (HttpServletRequest) request );
+            List<HttpHeader> headers = getHeaders( (HttpServletRequest) request );
 
             List<Callable<JsonNodeResult>> callables =
                     map.entrySet()
