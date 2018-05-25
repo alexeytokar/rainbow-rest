@@ -33,7 +33,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         this(
                 Executors.newFixedThreadPool( DEFAULT_NUMBER_OF_THREADS ),
                 DEFAULT_EXECUTION_TIMEOUT_SECONDS,
-                new BasicHttpClient()
+                new ApacheHttpClientAdapter()
         );
     }
 
@@ -41,7 +41,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             ExecutorService executorService,
             int executionTimeoutSeconds
     ) {
-        this( executorService, executionTimeoutSeconds, new BasicHttpClient() );
+        this( executorService, executionTimeoutSeconds, new ApacheHttpClientAdapter() );
     }
 
     public RainbowRestOncePerRequestFilter(
@@ -153,7 +153,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         List<HttpHeader> headers = new ArrayList<>();
         for ( Enumeration<String> e = request.getHeaderNames(); e.hasMoreElements(); ) {
             String name = e.nextElement();
-            headers.add( new BasicHttpHeader( name, request.getHeader( name ) ) );
+            headers.add( new HttpHeader( name, request.getHeader( name ) ) );
         }
         return headers;
     }

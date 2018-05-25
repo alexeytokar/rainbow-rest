@@ -12,14 +12,14 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BasicHttpClient implements HttpClient {
+public class ApacheHttpClientAdapter implements HttpClient {
     private org.apache.http.client.HttpClient httpClient;
 
-    public BasicHttpClient() {
+    public ApacheHttpClientAdapter() {
         httpClient = HttpClients.createDefault();
     }
 
-    public BasicHttpClient( org.apache.http.client.HttpClient httpClient ) {
+    public ApacheHttpClientAdapter( org.apache.http.client.HttpClient httpClient ) {
         this.httpClient = httpClient;
     }
 

@@ -1,7 +1,19 @@
 package ua.net.tokar.json.rainbowrest;
 
-public interface HttpHeader {
-    String getName();
+public class HttpHeader {
+    private String name;
+    private String value;
 
-    String getValue();
+    public HttpHeader( String name, String value ) {
+        this.name = name;
+        this.value = value;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getValue() {
+        return value;
+    }
 }
