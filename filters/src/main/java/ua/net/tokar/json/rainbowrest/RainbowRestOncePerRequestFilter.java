@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import ua.net.tokar.json.rainbowrest.exception.RequestProcessingFailedException;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -168,7 +169,14 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             List<Callable<T>> callables
     ) {
         List<Future<T>> futures = new ArrayList<>();
-        callables.forEach( c -> futures.add( executorService.submit( c ) ) );
+        try {
+            callables.forEach( c -> futures.add( executorService.submit( c ) ) );
+        } catch ( RejectedExecutionException e ) {
+            for ( Future<T> f : futures ) {
+                f.cancel( true );
+            }
+            throw new RequestProcessingFailedException( e );
+        }
 
         List<T> result = new ArrayList<>();
         for ( Future<T> future : futures ) {
