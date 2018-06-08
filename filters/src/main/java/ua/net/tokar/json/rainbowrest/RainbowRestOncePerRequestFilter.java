@@ -25,6 +25,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     private static final int DEFAULT_EXECUTION_TIMEOUT_SECONDS = 10;
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
     private static final String DEFAULT_EXECUTION_TIMEOUT_SECONDS_PARAM_NAME = "executionTimeoutSeconds";
+    private static final String CONTENT_LENGTH_HEADER_NAME = "Content-Length";
 
     private ExecutorService executorService;
     private int executionTimeoutSeconds;
@@ -154,6 +155,9 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         List<HttpHeader> headers = new ArrayList<>();
         for ( Enumeration<String> e = request.getHeaderNames(); e.hasMoreElements(); ) {
             String name = e.nextElement();
+            if ( CONTENT_LENGTH_HEADER_NAME.equalsIgnoreCase( name ) ) {
+                continue;
+            }
             headers.add( new HttpHeader( name, request.getHeader( name ) ) );
         }
         return headers;
