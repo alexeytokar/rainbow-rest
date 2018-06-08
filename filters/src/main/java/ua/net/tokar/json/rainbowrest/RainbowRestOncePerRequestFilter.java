@@ -153,6 +153,9 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         List<HttpHeader> headers = new ArrayList<>();
         for ( Enumeration<String> e = request.getHeaderNames(); e.hasMoreElements(); ) {
             String name = e.nextElement();
+            if ( "Content-Length".equalsIgnoreCase( name ) ) {
+                continue;
+            }
             headers.add( new HttpHeader( name, request.getHeader( name ) ) );
         }
         return headers;
