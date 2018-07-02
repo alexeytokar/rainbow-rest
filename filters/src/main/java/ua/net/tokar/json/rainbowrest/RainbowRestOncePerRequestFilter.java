@@ -21,7 +21,6 @@ import java.util.concurrent.*;
 
 abstract class RainbowRestOncePerRequestFilter implements Filter {
 
-    private static final int DEFAULT_NUMBER_OF_THREADS = 10;
     private static final int DEFAULT_EXECUTION_TIMEOUT_SECONDS = 10;
     private static final String ALREADY_FILTERED_SUFFIX = ".FILTERED";
     private static final String DEFAULT_EXECUTION_TIMEOUT_SECONDS_PARAM_NAME = "executionTimeoutSeconds";
@@ -33,7 +32,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
 
     public RainbowRestOncePerRequestFilter() {
         this(
-                Executors.newFixedThreadPool( DEFAULT_NUMBER_OF_THREADS ),
+                Executors.newCachedThreadPool(),
                 DEFAULT_EXECUTION_TIMEOUT_SECONDS,
                 new ApacheHttpClientAdapter()
         );
@@ -50,7 +49,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             HttpClient httpClient
     ) {
         this(
-                Executors.newFixedThreadPool( DEFAULT_NUMBER_OF_THREADS ),
+                Executors.newCachedThreadPool(),
                 DEFAULT_EXECUTION_TIMEOUT_SECONDS,
                 httpClient
         );
