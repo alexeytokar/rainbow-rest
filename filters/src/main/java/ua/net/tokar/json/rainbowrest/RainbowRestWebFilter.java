@@ -149,6 +149,9 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
 
         String content = capturingResponseWrapper.getCaptureAsString();
         JsonNode tree = mapper.readTree( content );
+        if ( tree == null ) {
+            return;
+        }
         if ( !include.isEmpty() ) {
             processIncludes( tree, include, request );
         }
