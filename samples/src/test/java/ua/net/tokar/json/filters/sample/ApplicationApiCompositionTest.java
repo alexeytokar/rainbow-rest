@@ -7,10 +7,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.net.URI;
-
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -104,7 +103,41 @@ public class ApplicationApiCompositionTest {
         assertThat( body, hasNoJsonPath( "$[0].users[0].friends.href" ) );
         assertThat( body, hasNoJsonPath( "$[0].users[1].friends.href" ) );
         assertThat( body, hasNoJsonPath( "$[0].users.href" ) );
+    }
+
+    @Test
+    public void mustHandleIncludesOfArrayElements() {
+        String body = restTemplate.getForObject(
+                "/users?include=users.friends",
+                String.class
+        );
+
+        assertThat( body, hasJsonPath( "$.users", hasSize( 3 ) ) );
+        assertThat( body, hasJsonPath( "$.users[0].name", is( "boss" ) ) );
+        assertThat( body, hasJsonPath( "$.users[1].name", is( "cat" ) ) );
+        assertThat( body, hasJsonPath( "$.users[2].name", is( "dog" ) ) );
+        assertThat( body, hasJsonPath( "$.users[0].friends[0].name", is( "boss" ) ) );
+        assertThat( body, hasJsonPath( "$.users[1].friends[1].name", is( "cat" ) ) );
+        assertThat( body, hasJsonPath( "$.users[2].friends[2].name", is( "dog" ) ) );
+        assertThat( body, hasNoJsonPath( "$.users[0].friends.href" ) );
+        assertThat( body, hasNoJsonPath( "$.users[1].friends.href" ) );
+        assertThat( body, hasNoJsonPath( "$.users[2].friends.href" ) );
 
     }
 
+    @Test(timeout = 2000)
+    public void mustIgnoreInvalidIncludeOfSimpleArray() {
+        String body = restTemplate.getForObject(
+                "/users?include=users",
+                String.class
+        );
+
+        assertThat( body, hasJsonPath( "$.users", hasSize( 3 ) ) );
+        assertThat( body, hasJsonPath( "$.users[0].name", is( "boss" ) ) );
+        assertThat( body, hasJsonPath( "$.users[1].name", is( "cat" ) ) );
+        assertThat( body, hasJsonPath( "$.users[2].name", is( "dog" ) ) );
+        assertThat( body, hasJsonPath( "$.users[0].friends.href" ) );
+        assertThat( body, hasJsonPath( "$.users[1].friends.href" ) );
+        assertThat( body, hasJsonPath( "$.users[2].friends.href" ) );
+    }
 }

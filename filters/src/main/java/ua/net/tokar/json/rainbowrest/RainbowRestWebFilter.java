@@ -216,8 +216,9 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             if ( node.isArray() ) {
                 List<Callable<JsonNode>> callables = new ArrayList<>();
                 for ( final Iterator<JsonNode> it = node.elements(); it.hasNext(); ) {
+                    JsonNode element = it.next();
                     callables.add( () -> createNodeForInclude(
-                            it.next(),
+                            element,
                             request,
                             requestParamsFromInclude
                     ) );
