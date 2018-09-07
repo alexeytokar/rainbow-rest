@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import ua.net.tokar.json.rainbowrest.exception.RequestProcessingTimedOutException;
 import ua.net.tokar.json.rainbowrest.exception.RequestProcessingFailedException;
 
 import javax.servlet.*;
@@ -192,7 +193,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
                 throw new RuntimeException( e.getCause() );
             } catch ( TimeoutException e ) {
                 future.cancel( true );
-                throw new RuntimeException( e );
+                throw new RequestProcessingTimedOutException( e );
             }
         }
         return result;

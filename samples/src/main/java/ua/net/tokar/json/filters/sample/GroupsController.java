@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,6 +35,18 @@ public class GroupsController {
                      .skip( offset )
                      .limit( limit )
                      .collect( Collectors.toList() );
+    }
+
+    @RequestMapping( "/users" )
+    public HashMap<String, List<User>> getUsers() {
+        HashMap<String, List<User>> userWrapper = new HashMap<>();
+        List<User> users = Arrays.asList(
+                new User( "boss", new Link( "/users/1/friends", "friends" ) ),
+                new User( "cat", new Link( "/users/2/friends", "friends" ) ),
+                new User( "dog", new Link( "/users/42/friends", "friends" ) )
+        );
+        userWrapper.put( "users", users );
+        return userWrapper;
     }
 
     @RequestMapping( "/users/{id}/friends" )

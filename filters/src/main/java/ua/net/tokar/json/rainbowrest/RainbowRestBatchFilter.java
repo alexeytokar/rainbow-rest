@@ -10,11 +10,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -28,6 +30,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
     private static final String DEFAULT_BATCH_ENDPOINT_URI = "/batch";
 
     private String batchEndpointUri = DEFAULT_BATCH_ENDPOINT_URI;
+    private Integer maxBatchSize;
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -63,10 +66,12 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             ExecutorService executorService,
             int executionTimeoutSeconds,
             HttpClient httpClient,
-            String batchEndpointUri
+            String batchEndpointUri,
+            Integer maxBatchSize
     ) {
         super( executorService, executionTimeoutSeconds, httpClient );
         this.batchEndpointUri = batchEndpointUri;
+        this.maxBatchSize = maxBatchSize;
     }
 
     @Override
@@ -97,6 +102,18 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                     new TypeReference<Map<String, String>>() {
                     }
             );
+
+            if ( !isValidBatchSize( map ) ) {
+                sendError(
+                        response,
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        String.format(
+                                "Incorrect batch size. Max size=%d",
+                                maxBatchSize
+                        )
+                );
+                return;
+            }
 
             final ObjectNode tree = mapper.createObjectNode();
             List<HttpHeader> headers = getHeaders( (HttpServletRequest) request );
@@ -152,5 +169,18 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
         public String getFieldName() {
             return fieldName;
         }
+    }
+
+    private void sendError( ServletResponse response, int responseCode, String message )
+            throws IOException {
+        log.warn( message );
+        ( (HttpServletResponse) response ).sendError(
+                responseCode,
+                message
+        );
+    }
+
+    private boolean isValidBatchSize( Map<String, String> map ) {
+        return Objects.isNull( maxBatchSize ) || map.size() <= maxBatchSize;
     }
 }
