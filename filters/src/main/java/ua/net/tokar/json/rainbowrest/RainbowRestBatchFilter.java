@@ -97,12 +97,20 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                 || !httpServletRequest.getRequestURI().equalsIgnoreCase( batchEndpointUri ) ) {
             doFilter( request, response, filterChain );
         } else {
-            Map<String, String> map = mapper.readValue(
-                    request.getInputStream(),
-                    new TypeReference<Map<String, String>>() {
-                    }
-            );
-
+            Map<String, String> map;
+            try {
+                map = mapper.readValue(
+                        request.getInputStream(),
+                        new TypeReference<Map<String, String>>() {}
+                );
+            } catch ( IOException e ) {
+                sendError(
+                        response,
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "Incorrect batch request body. Expected example(use double quotes): {'key1':'/someRelativePath', 'key2':'/anotherRelativePath'}"
+                );
+                return;
+            }
             if ( !isValidBatchSize( map ) ) {
                 sendError(
                         response,
@@ -114,43 +122,50 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                 );
                 return;
             }
-
-            final ObjectNode tree = mapper.createObjectNode();
-            List<HttpHeader> headers = getHeaders( (HttpServletRequest) request );
-
-            List<Callable<JsonNodeResult>> callables =
-                    map.entrySet()
-                       .stream()
-                       .map( nameToUrl -> (Callable<JsonNodeResult>) ( () -> {
-                           String relativeUrl = nameToUrl.getValue();
-                           JsonNode jsonNode = null;
-                           try {
-                               jsonNode = mapper.readTree(
-                                       getResponseViaInternalDispatching(
-                                               buildUri(
-                                                       request,
-                                                       relativeUrl,
-                                                       Collections.emptyList()
-                                               ),
-                                               headers
-                                       )
-                               );
-                           } catch ( IOException e ) {
-                               // TODO provide error message
-                           } catch ( URISyntaxException e ) {
-                               log.warn( "Cannot build URI for relativeUrl='{}'", relativeUrl );
-                           }
-                           return new JsonNodeResult( jsonNode, nameToUrl.getKey() );
-                       } ) )
-                       .collect( Collectors.toList() );
-
-            executeInParallel( callables ).forEach( result -> tree.set(
-                    result.getFieldName(),
-                    result.getJsonNode()
-            ) );
             response.setContentType( "application/json" );
-            response.getWriter().write( tree.toString() );
+            response.getWriter().write(
+                    getBatchResults(
+                            map,
+                            (HttpServletRequest) request
+                    ).toString() );
         }
+    }
+
+    private ObjectNode getBatchResults( Map<String, String> map, HttpServletRequest request ) {
+        final ObjectNode tree = mapper.createObjectNode();
+        List<HttpHeader> headers = getHeaders( request );
+
+        List<Callable<JsonNodeResult>> callables =
+                map.entrySet()
+                   .stream()
+                   .map( nameToUrl -> (Callable<JsonNodeResult>) ( () -> {
+                       String relativeUrl = nameToUrl.getValue();
+                       JsonNode jsonNode = null;
+                       try {
+                           jsonNode = mapper.readTree(
+                                   getResponseViaInternalDispatching(
+                                           buildUri(
+                                                   request,
+                                                   relativeUrl,
+                                                   Collections.emptyList()
+                                           ),
+                                           headers
+                                   )
+                           );
+                       } catch ( IOException e ) {
+                           // TODO provide error message
+                       } catch ( URISyntaxException e ) {
+                           log.warn( "Cannot build URI for relativeUrl='{}'", relativeUrl );
+                       }
+                       return new JsonNodeResult( jsonNode, nameToUrl.getKey() );
+                   } ) )
+                   .collect( Collectors.toList() );
+
+        executeInParallel( callables ).forEach( result -> tree.set(
+                result.getFieldName(),
+                result.getJsonNode()
+        ) );
+        return tree;
     }
 
     private static class JsonNodeResult {
