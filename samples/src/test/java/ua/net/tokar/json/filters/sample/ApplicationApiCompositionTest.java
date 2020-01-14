@@ -140,4 +140,22 @@ public class ApplicationApiCompositionTest {
         assertThat( body, hasJsonPath( "$.users[1].friends.href" ) );
         assertThat( body, hasJsonPath( "$.users[2].friends.href" ) );
     }
+
+    @Test
+    public void mustIgnoreRequestParametersWithoutValue() {
+        String body = restTemplate.getForObject(
+                "/groups?include=a(b),users(offset,limit:2),users.friends(offset:2,limit:1)",
+                String.class
+        );
+
+        assertThat( body, hasJsonPath( "$[0].id", is( 2 ) ) );
+        assertThat( body, hasJsonPath( "$[0].title", is( "bad group" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[0].name", is( "boss" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[1].name", is( "cat" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[0].friends[0].name", is( "dog" ) ) );
+        assertThat( body, hasJsonPath( "$[0].users[1].friends[0].name", is( "dog" ) ) );
+        assertThat( body, hasNoJsonPath( "$[0].users[0].friends.href" ) );
+        assertThat( body, hasNoJsonPath( "$[0].users[1].friends.href" ) );
+        assertThat( body, hasNoJsonPath( "$[0].users.href" ) );
+    }
 }
