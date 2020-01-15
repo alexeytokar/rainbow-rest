@@ -1,12 +1,13 @@
 plugins {
     id 'com.gorylenko.gradle-git-properties' version '1.4.17'
-    id 'org.springframework.boot' version '1.5.8.RELEASE'
+    id 'org.springframework.boot' version '2.2.2.RELEASE'
+    id "io.spring.dependency-management" version "1.0.8.RELEASE"
 }
 
 dependencyManagement {
     imports {
         mavenBom 'io.spring.platform:platform-bom:Athens-SR6'
-        mavenBom 'org.springframework.boot:spring-boot-dependencies:1.5.8.RELEASE'
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:2.2.2.RELEASE'
     }
 }
 
