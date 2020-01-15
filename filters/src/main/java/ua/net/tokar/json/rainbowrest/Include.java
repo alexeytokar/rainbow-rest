@@ -24,11 +24,15 @@ public class Include {
         return Arrays.stream( requestParams.split( "," ) )
                      .map( param -> {
                          String[] nameValue = param.split( ":" );
+                         if ( nameValue.length != 2 ) {
+                             return null;
+                         }
                          return new Param(
                                  nameValue[0],
                                  nameValue[1]
                          );
                      } )
+                     .filter( Objects::nonNull )
                      .collect( Collectors.toList() );
     }
 
