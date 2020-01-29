@@ -1,7 +1,7 @@
 [![Release](https://jitpack.io/v/alexeytokar/rainbow-rest.svg)](https://jitpack.io/#alexeytokar/rainbow-rest)
 ![Downloads per month](https://jitpack.io/v/alexeytokar/rainbow-rest/month.svg)
 
-![Travis status](https://api.travis-ci.org/alexeytokar/rainbow-rest.svg)
+![Java CI](https://github.com/alexeytokar/rainbow-rest/workflows/Java%20CI/badge.svg)
 
 # How to add dependency to your project
 ```
