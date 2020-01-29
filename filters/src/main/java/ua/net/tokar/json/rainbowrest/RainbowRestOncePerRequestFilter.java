@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -109,7 +110,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
             ServletRequest request,
             ServletResponse response
     ) throws ServletException, IOException {
-        HtmlResponseWrapper responseWrapper = new HtmlResponseWrapper( response );
+        JsonResponseWrapper responseWrapper = new JsonResponseWrapper( response );
         request.getRequestDispatcher( relativeUrl )
                .forward(
                        new GetHttpServletRequest( (HttpServletRequest) request ),
@@ -138,7 +139,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         List<NameValuePair> params = new ArrayList<>();
         params.addAll( URLEncodedUtils.parse(
                 new URI( relativeUrl ),
-                Charset.forName( "UTF-8" )
+                StandardCharsets.UTF_8
         ) );
         params.addAll( additionalRequestParams );
 
