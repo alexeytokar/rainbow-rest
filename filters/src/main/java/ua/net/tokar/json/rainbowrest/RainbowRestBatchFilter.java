@@ -123,11 +123,10 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                 return;
             }
             response.setContentType( "application/json" );
-            response.getWriter().write(
-                    getBatchResults(
-                            map,
-                            (HttpServletRequest) request
-                    ).toString() );
+            mapper.writeValue(
+                    response.getOutputStream(),
+                    getBatchResults( map, (HttpServletRequest) request )
+            );
         }
     }
 

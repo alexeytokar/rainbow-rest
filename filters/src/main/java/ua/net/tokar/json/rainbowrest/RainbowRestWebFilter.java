@@ -124,7 +124,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             return;
         }
 
-        HtmlResponseWrapper capturingResponseWrapper = new HtmlResponseWrapper( response );
+        JsonResponseWrapper capturingResponseWrapper = new JsonResponseWrapper( response );
         filterChain.doFilter( request, capturingResponseWrapper );
 
         Set<String> includeFields = new HashSet<>();
@@ -159,7 +159,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             filterTree( tree, includeFields, excludeFields );
         }
 
-        response.getWriter().write( tree.toString() );
+        mapper.writeValue(response.getOutputStream(), tree);
     }
 
     private void processIncludes(

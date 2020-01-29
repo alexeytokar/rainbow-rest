@@ -9,13 +9,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 
-class HtmlResponseWrapper extends HttpServletResponseWrapper {
+class JsonResponseWrapper extends HttpServletResponseWrapper {
+    // RFC 8259 (section 11) specifies that 'charset' parameter for media
+    // type 'application/json' has no effect and JSON text MUST be encoded
+    // using UTF-8 (section 8.1)
+    private static final String DEFAULT_CHARSET = StandardCharsets.UTF_8.name();
+
+    private String charset = DEFAULT_CHARSET;
     private final ByteArrayOutputStream capture;
     private ServletOutputStream output;
     private PrintWriter writer;
 
-    HtmlResponseWrapper(ServletResponse response) {
+    JsonResponseWrapper(ServletResponse response) {
         super((HttpServletResponse)response);
         capture = new ByteArrayOutputStream(response.getBufferSize());
     }
@@ -84,6 +91,13 @@ class HtmlResponseWrapper extends HttpServletResponseWrapper {
         }
     }
 
+    @Override
+    public void setCharacterEncoding(String charset) {
+        // for backward compatibility use non-default charset if set explicitly
+        super.setCharacterEncoding(charset);
+        this.charset = charset != null ? charset : DEFAULT_CHARSET;
+    }
+
     private byte[] getCaptureAsBytes() throws IOException {
         if (writer != null) {
             writer.close();
@@ -95,6 +109,6 @@ class HtmlResponseWrapper extends HttpServletResponseWrapper {
     }
 
     String getCaptureAsString() throws IOException {
-        return new String(getCaptureAsBytes(), getCharacterEncoding());
+        return new String(getCaptureAsBytes(), charset);
     }
 }
