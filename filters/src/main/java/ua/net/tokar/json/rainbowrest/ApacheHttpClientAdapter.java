@@ -9,6 +9,7 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,7 @@ public class ApacheHttpClientAdapter implements HttpClient {
                 .collect( Collectors.toList() );
         httpGet.setHeaders( apacheHeaders.toArray(new Header[apacheHeaders.size()]) );
         HttpEntity entity = httpClient.execute( httpGet ).getEntity();
-        return entity != null ? EntityUtils.toString( entity ) : null;
+        return entity != null ? EntityUtils.toString( entity, StandardCharsets.UTF_8 ) : null;
     }
 
     private Header transform( HttpHeader header ) {
