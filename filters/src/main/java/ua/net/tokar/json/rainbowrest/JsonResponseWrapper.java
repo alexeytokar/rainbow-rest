@@ -24,6 +24,7 @@ class JsonResponseWrapper extends HttpServletResponseWrapper {
 
     JsonResponseWrapper(ServletResponse response) {
         super((HttpServletResponse)response);
+        super.setCharacterEncoding( charset );
         capture = new ByteArrayOutputStream(response.getBufferSize());
     }
 
