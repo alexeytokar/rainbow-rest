@@ -159,6 +159,7 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             filterTree( tree, includeFields, excludeFields );
         }
 
+        response.setContentType( "application/json" );
         mapper.writeValue(response.getOutputStream(), tree);
     }
 
