@@ -1,46 +1,44 @@
 buildscript {
     repositories {
-        jcenter()
         mavenCentral()
         maven { url 'https://repo.spring.io/plugins-release' }
     }
-    dependencies {
-        classpath 'org.owasp:dependency-check-gradle:3.0.1'
-        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
-    }
+//    dependencies {
+//        classpath 'org.owasp:dependency-check-gradle:3.0.1'
+//        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+//    }
 }
 
 subprojects {
     apply plugin: 'java'
     apply plugin: 'idea'
-    apply plugin: 'propdeps'
-    apply plugin: 'propdeps-maven'
-    apply plugin: 'propdeps-idea'
-    apply plugin: 'org.owasp.dependencycheck'
+//    apply plugin: 'propdeps'
+//    apply plugin: 'propdeps-maven'
+//    apply plugin: 'propdeps-idea'
+//    apply plugin: 'org.owasp.dependencycheck'
+//
+//    dependencyCheck {
+//        suppressionFile = "${rootProject.projectDir}/suppression.xml"
+//        outputDirectory = "${rootProject.projectDir}/build/security-report/${project.name}"
+//        failBuildOnCVSS = 0
+//
+//        quickQueryTimestamp = false
+//        analyzers {
+//            nuspecEnabled = false
+//            assemblyEnabled = false
+//            pathToMono = false
+//        }
+//    }
 
-    dependencyCheck {
-        suppressionFile = "${rootProject.projectDir}/suppression.xml"
-        outputDirectory = "${rootProject.projectDir}/build/security-report/${project.name}"
-        failBuildOnCVSS = 0
-
-        quickQueryTimestamp = false
-        analyzers {
-            nuspecEnabled = false
-            assemblyEnabled = false
-            pathToMono = false
-        }
-    }
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
 
     dependencies {
-        compile ('javax.validation:validation-api:2.0.0.Final') {
-            force = true
-        }
-        compile ('javax.servlet:javax.servlet-api:4.0.0') {
-            force = true
-        }
+        implementation 'javax.validation:validation-api:2.0.0.Final';
+        implementation 'javax.servlet:javax.servlet-api:4.0.1';
     }
 
-    check.finalizedBy dependencyCheckAnalyze
+//    check.finalizedBy dependencyCheckAnalyze
 
     configurations {
         all*.exclude group: 'org.hibernate', module: 'hibernate-validator'
