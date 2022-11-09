@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -79,6 +81,20 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
         this.fieldsParamName = fieldsParamName;
         this.includeParamName = includeParamName;
     }
+
+    public RainbowRestWebFilter(
+            ExecutorService executorService,
+            int executionTimeoutSeconds,
+            HttpClient httpClient,
+            String fieldsParamName,
+            String includeParamName,
+            URI batchServerUri
+    ) {
+        super( executorService, executionTimeoutSeconds, httpClient, batchServerUri );
+        this.fieldsParamName = fieldsParamName;
+        this.includeParamName = includeParamName;
+    }
+
     /**
      * If you want to override default names of params for fields filtering and inclusion,
      * you could  provide new names via init-params in web.xml
@@ -245,25 +261,30 @@ public class RainbowRestWebFilter extends RainbowRestOncePerRequestFilter {
             return node;
         }
 
-        List<HttpHeader> headers = getHeaders( (HttpServletRequest) request );
+        final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        List<HttpHeader> headers = getHeaders( httpServletRequest );
         String relativeUrl = node.path( INCLUSION_ELEMENT_ATTRIBUTE ).textValue();
         try {
             return mapper.readTree(
-                    getResponseViaInternalDispatching( buildUri(
-                            request,
-                            relativeUrl,
-                            requestParamsFromInclude.stream()
-                                                    .map( param -> new BasicNameValuePair(
-                                                            param.getName(),
-                                                            param.getValue()
-                                                    ) )
-                                                    .collect( Collectors.toList() )
-                    ), headers )
+                    getResponseViaInternalDispatching(
+                            getUri(
+                                    httpServletRequest,
+                                    relativeUrl,
+                                    getAdditionalRequestParams( requestParamsFromInclude )
+                            ),
+                            headers
+                    )
             );
         } catch ( URISyntaxException e ) {
             log.warn( "Cannot build URI for relativeUrl='{}'", relativeUrl );
             return node;
         }
+    }
+
+    private List<NameValuePair> getAdditionalRequestParams( Collection<Param> requestParamsFromInclude ) {
+        return requestParamsFromInclude.stream()
+                                       .map( param -> new BasicNameValuePair( param.getName(), param.getValue() ) )
+                                       .collect( Collectors.toList() );
     }
 
     private void filterTree(

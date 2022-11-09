@@ -12,6 +12,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
     private String batchEndpointUri = DEFAULT_BATCH_ENDPOINT_URI;
     private Integer maxBatchSize;
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
 
 
     public RainbowRestBatchFilter() {
@@ -70,6 +71,19 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
             Integer maxBatchSize
     ) {
         super( executorService, executionTimeoutSeconds, httpClient );
+        this.batchEndpointUri = batchEndpointUri;
+        this.maxBatchSize = maxBatchSize;
+    }
+
+    public RainbowRestBatchFilter(
+            ExecutorService executorService,
+            int executionTimeoutSeconds,
+            HttpClient httpClient,
+            String batchEndpointUri,
+            Integer maxBatchSize,
+            URI batchServerUri
+    ) {
+        super( executorService, executionTimeoutSeconds, httpClient, batchServerUri );
         this.batchEndpointUri = batchEndpointUri;
         this.maxBatchSize = maxBatchSize;
     }
@@ -143,11 +157,7 @@ public class RainbowRestBatchFilter extends RainbowRestOncePerRequestFilter {
                        try {
                            jsonNode = mapper.readTree(
                                    getResponseViaInternalDispatching(
-                                           buildUri(
-                                                   request,
-                                                   relativeUrl,
-                                                   Collections.emptyList()
-                                           ),
+                                           getUri( request, relativeUrl, Collections.emptyList() ),
                                            headers
                                    )
                            );

@@ -31,6 +31,7 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
     private ExecutorService executorService;
     private int executionTimeoutSeconds;
     private HttpClient httpClient;
+    private URI batchServerUri;
 
     public RainbowRestOncePerRequestFilter() {
         this(
@@ -65,6 +66,16 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         this.executorService = executorService;
         this.executionTimeoutSeconds = executionTimeoutSeconds;
         this.httpClient = httpClient;
+    }
+
+    public RainbowRestOncePerRequestFilter(
+            ExecutorService executorService,
+            int executionTimeoutSeconds,
+            HttpClient httpClient,
+            URI batchServerUri
+    ) {
+        this( executorService, executionTimeoutSeconds, httpClient );
+        this.batchServerUri = batchServerUri;
     }
 
     @Override
@@ -127,22 +138,20 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
         return httpClient.getResponseBody( uri, headers );
     }
 
+    protected URI getUri( HttpServletRequest request, String relativeUrl, List<NameValuePair> requestParams )
+            throws URISyntaxException {
+        return batchServerUri == null
+                ? buildUri( request, relativeUrl, requestParams )
+                : buildUri( batchServerUri, relativeUrl, requestParams );
+    }
+
     protected URI buildUri(
             ServletRequest request,
             String relativeUrl,
             Collection<NameValuePair> additionalRequestParams
     ) throws URISyntaxException {
-        int questionMarkIndex = relativeUrl.indexOf( '?' );
-        String path = questionMarkIndex != -1
-                ? relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) )
-                : relativeUrl;
-        List<NameValuePair> params = new ArrayList<>();
-        params.addAll( URLEncodedUtils.parse(
-                new URI( relativeUrl ),
-                StandardCharsets.UTF_8
-        ) );
-        params.addAll( additionalRequestParams );
-
+        String path = getPath( relativeUrl );
+        List<NameValuePair> params = getParams( relativeUrl, additionalRequestParams );
         return new URIBuilder()
                 .setScheme( request.getScheme() )
                 .setHost( request.getLocalName() )
@@ -150,6 +159,42 @@ abstract class RainbowRestOncePerRequestFilter implements Filter {
                 .setPath( path )
                 .setParameters( params )
                 .build();
+    }
+
+    protected URI buildUri(
+            URI batchServerUri,
+            String relativeUrl,
+            Collection<NameValuePair> additionalRequestParams
+    ) throws URISyntaxException {
+        String path = getPath( relativeUrl );
+        List<NameValuePair> params = getParams( relativeUrl, additionalRequestParams );
+        return new URIBuilder()
+                .setScheme( batchServerUri.getScheme() )
+                .setHost( batchServerUri.getHost() )
+                .setPort( batchServerUri.getPort() )
+                .setPath( path )
+                .setParameters( params )
+                .build();
+    }
+
+    private List<NameValuePair> getParams(
+            String relativeUrl,
+            Collection<NameValuePair> additionalRequestParams
+    ) throws URISyntaxException {
+        List<NameValuePair> params = new ArrayList<>();
+        params.addAll( URLEncodedUtils.parse(
+                new URI( relativeUrl ),
+                StandardCharsets.UTF_8
+        ) );
+        params.addAll( additionalRequestParams );
+        return params;
+    }
+
+    private String getPath( String relativeUrl ) {
+        int questionMarkIndex = relativeUrl.indexOf( '?' );
+        return questionMarkIndex != -1
+                ? relativeUrl.substring( 0, relativeUrl.indexOf( '?' ) )
+                : relativeUrl;
     }
 
     protected List<HttpHeader> getHeaders( HttpServletRequest request ) {
