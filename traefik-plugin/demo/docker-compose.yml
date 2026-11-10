@@ -1,0 +1,23 @@
+# Traefik with the Rainbow REST plugin in front of a small JSON backend.
+#
+#   docker compose up
+#   curl 'http://localhost:8000/groups?include=users&fields=-rel'
+services:
+  traefik:
+    image: traefik:v3.2
+    command:
+      - --entryPoints.web.address=:8000
+      - --providers.file.filename=/etc/traefik/dynamic.yml
+      - --experimental.localPlugins.rainbowrest.moduleName=github.com/alexeytokar/rainbowrest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ..:/plugins-local/src/github.com/alexeytokar/rainbowrest:ro
+
+  backend:
+    image: golang:1.24
+    working_dir: /src
+    command: go run ./demo/backend :8080
+    volumes:
+      - ..:/src:ro

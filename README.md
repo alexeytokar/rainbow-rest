@@ -23,3 +23,7 @@ All of the features are accessible by just adding one of the following filters:
  * RainbowRestBatchFilter - for batch processing (it exposes ````POST /batch```` request handle)
 
 [check out examples page](https://github.com/alexeytokar/rainbow-rest/wiki/Examples)
+
+# Traefik plugin
+The same functionality is available as a [Traefik](https://traefik.io) middleware plugin, for APIs which are not
+written in java or cannot be changed: see [traefik-plugin](traefik-plugin).

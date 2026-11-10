@@ -1,0 +1,26 @@
+http:
+  routers:
+    api:
+      rule: PathPrefix(`/`)
+      entryPoints: [web]
+      service: backend
+      # compress comes first, so that it compresses the transformed response.
+      middlewares: [compress, rainbow-rest]
+
+  middlewares:
+    compress:
+      compress: {}
+    rainbow-rest:
+      plugin:
+        rainbowrest:
+          fieldsParamName: fields
+          includeParamName: include
+          batchEndpointUri: /batch
+          maxBatchSize: 20
+          executionTimeoutSeconds: 10
+
+  services:
+    backend:
+      loadBalancer:
+        servers:
+          - url: http://backend:8080

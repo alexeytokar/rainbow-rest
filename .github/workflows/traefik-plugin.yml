@@ -1,0 +1,31 @@
+name: Traefik plugin
+
+on:
+  push:
+    paths:
+      - 'traefik-plugin/**'
+      - '.github/workflows/traefik-plugin.yml'
+  pull_request:
+    paths:
+      - 'traefik-plugin/**'
+      - '.github/workflows/traefik-plugin.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: traefik-plugin
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        cache: false
+    - name: Check formatting
+      run: test -z "$(gofmt -l .)"
+    - name: Vet
+      run: go vet ./...
+    - name: Test
+      run: go test -race ./...

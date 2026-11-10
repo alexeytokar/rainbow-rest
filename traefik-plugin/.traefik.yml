@@ -1,0 +1,15 @@
+displayName: Rainbow REST
+type: middleware
+
+import: github.com/alexeytokar/rainbowrest
+
+summary: >-
+  Adds batch requests, field filtering and sub-resource inclusion to any
+  existing JSON REST API, without touching the backend.
+
+testData:
+  fieldsParamName: fields
+  includeParamName: include
+  batchEndpointUri: /batch
+  maxBatchSize: 0
+  executionTimeoutSeconds: 10
