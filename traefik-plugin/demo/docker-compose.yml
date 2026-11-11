@@ -1,7 +1,7 @@
 # Traefik with the Rainbow REST plugin in front of a small JSON backend.
 #
 #   docker compose up
-#   curl 'http://localhost:8000/groups?include=users&fields=-rel'
+#   curl 'http://localhost:8000/groups?include=users&fields=-users.rel'
 services:
   traefik:
     image: traefik:v3.2

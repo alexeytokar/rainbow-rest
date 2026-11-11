@@ -198,8 +198,8 @@ func (m *RainbowRest) transform(req *http.Request, body []byte, includeValue, fi
 		}
 	}
 
-	if included, excluded := parseFields(fieldsValue); len(included) > 0 || len(excluded) > 0 {
-		filterTree(tree, included, excluded)
+	if selection := parseFields(fieldsValue); selection != nil {
+		filterTree(tree, selection)
 	}
 
 	return encodeJSON(tree)

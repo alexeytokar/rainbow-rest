@@ -224,6 +224,41 @@ func TestFields(t *testing.T) {
 	}
 }
 
+func TestFieldPaths(t *testing.T) {
+	const users = "/groups?include=users(limit:1)&fields="
+	const friends = `{"href":"/users/1/friends","rel":"friends"}`
+
+	for fields, want := range map[string]string{
+		// Excluding a top level field leaves deeper fields with that name.
+		"-title,-id": `{"users":[{"name":"boss","friends":` + friends + `}]}`,
+		// Excluding a nested field leaves the top level alone.
+		"-users.friends": `{"id":2,"title":"bad group","users":[{"name":"boss"}]}`,
+		"-users.friends.rel,-id": `{"title":"bad group",` +
+			`"users":[{"name":"boss","friends":{"href":"/users/1/friends"}}]}`,
+		// Selecting a field keeps everything below it.
+		"id,users": `{"id":2,"users":[{"name":"boss","friends":` + friends + `}]}`,
+		// Selecting a nested field also selects its parents.
+		"users.name":              `{"users":[{"name":"boss"}]}`,
+		"title,users.friends.rel": `{"title":"bad group","users":[{"friends":{"rel":"friends"}}]}`,
+		// The more specific selection narrows the broader one.
+		"users,users.name": `{"users":[{"name":"boss"}]}`,
+		// Both styles can be mixed, exclusion wins.
+		"id,users,-users.friends": `{"id":2,"users":[{"name":"boss"}]}`,
+		"users.name,-users.name":  `{"users":[{}]}`,
+		// A name of a nested field does not match on the top level.
+		"name": `{}`,
+		// Paths that lead nowhere and empty entries are harmless.
+		"-id.x,-nothing.at.all,,-": `{"id":2,"title":"bad group",` +
+			`"users":[{"name":"boss","friends":` + friends + `}]}`,
+	} {
+		want = "[" + want + "," + strings.NewReplacer(
+			`"id":2`, `"id":5`, "bad group", "good group").Replace(want) + "]"
+		if got := get(t, users+fields); got != want {
+			t.Errorf("fields=%s:\n got %s\nwant %s", fields, got, want)
+		}
+	}
+}
+
 func TestInclude(t *testing.T) {
 	body := get(t, "/groups?include=users")
 
@@ -338,7 +373,7 @@ func TestBatchBadRequest(t *testing.T) {
 
 func TestBatchEntriesSupportIncludeAndFields(t *testing.T) {
 	rec := do(newPlugin(t, backend(), nil), http.MethodPost, "/batch",
-		`{"z":"/groups?include=users&fields=name,users","a":"/groups?fields=id"}`)
+		`{"z":"/groups?include=users&fields=users.name","a":"/groups?fields=id"}`)
 	body := rec.Body.String()
 
 	if !strings.HasPrefix(body, `{"z":[{"users":[{"name":"boss"},`) ||
@@ -393,14 +428,14 @@ func TestCustomParamNames(t *testing.T) {
 		c.IncludeParamName = "expand"
 	})
 
-	rec := do(handler, http.MethodGet, "/groups?expand=users&only=name,users&fields=id&include=nothing", "")
+	rec := do(handler, http.MethodGet, "/groups?expand=users&only=users.name&fields=id&include=nothing", "")
 	if !strings.HasPrefix(rec.Body.String(), `[{"users":[{"name":"boss"},{"name":"cat"},{"name":"dog"}]},`) {
 		t.Errorf("got %s", rec.Body.String())
 	}
 }
 
 func TestFieldOrderAndNumbersArePreserved(t *testing.T) {
-	body := get(t, "/ordered?fields=-b")
+	body := get(t, "/ordered?fields=-m.b")
 
 	if want := `{"z":1,"a":12345678901234567890,"m":{"y":"<b>"}}`; body != want {
 		t.Errorf("got %s, want %s", body, want)

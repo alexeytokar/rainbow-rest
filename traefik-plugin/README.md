@@ -7,7 +7,7 @@ filters found in the [`filters`](../filters) module of this repository.
 
 | Feature | Request | Java equivalent |
 |---------|---------|-----------------|
-| Field filtering | `GET /groups?fields=id,title` or `?fields=-title` | `RainbowRestWebFilter` |
+| Field filtering | `GET /groups?fields=id,users.name` or `?fields=-title,-users.rel` | `RainbowRestWebFilter` |
 | Inclusion | `GET /groups?include=users,users.friends(limit:1)` | `RainbowRestWebFilter` |
 | Batch | `POST /batch` with `{"a":"/groups","b":"/users"}` | `RainbowRestBatchFilter` |
 
@@ -25,9 +25,12 @@ Given this backend response for `GET /groups`:
 ]
 ```
 
-* `GET /groups?fields=id` keeps only the listed fields, on every level:
+* `GET /groups?fields=id` keeps only the listed fields:
   `[{"id":2},{"id":5}]`
-* `GET /groups?fields=-title` removes the listed fields, on every level.
+* `GET /groups?fields=-title` removes the listed fields.
+* Fields are addressed with the same dot separated paths as `include`,
+  relative to the top level of the response and walking through arrays
+  transparently. See [Field paths](#field-paths).
 * `GET /groups?include=users` replaces every `users` link object (an object
   with an `href` field) with the response of `GET <href>`.
 * `GET /groups?include=users,users.friends` also resolves the `friends` links
@@ -39,7 +42,26 @@ Given this backend response for `GET /groups`:
   `{"groups":[...],"users":[...]}`. The entries may use `include` and
   `fields` themselves.
 
-`include` and `fields` can be combined; includes are resolved first.
+`include` and `fields` can be combined; includes are resolved first, so
+`fields` can address what was included.
+
+### Field paths
+
+A name only matches on the level its path points to: `-title` removes the
+top level `title` and leaves `users.title` alone, `-users.title` does the
+opposite.
+
+| `fields=` | Result |
+|-----------|--------|
+| `-title` | Everything but the top level `title`. |
+| `-users.title` | Everything but the `title` of each of the `users`. |
+| `id,users` | Only `id` and `users`, the latter with all of its fields. |
+| `users.name` | Only `users`, and of those only `name`. |
+| `id,users,-users.rel` | Only `id` and `users`, the latter without `rel`. |
+
+Listing a field without `-` restricts the level it is on to the listed
+fields; levels without such a field keep everything that is not excluded.
+When a field is both listed and excluded, the exclusion wins.
 
 ## Configuration
 
@@ -112,7 +134,7 @@ cd demo
 docker compose up
 
 curl 'http://localhost:8000/groups?fields=id'
-curl 'http://localhost:8000/groups?include=users(limit:1),users.friends&fields=name,users,friends'
+curl 'http://localhost:8000/groups?include=users(limit:1),users.friends&fields=title,users.name,users.friends.name'
 curl -X POST -d '{"groups":"/groups","users":"/groups/2/users"}' http://localhost:8000/batch
 ```
 
@@ -122,6 +144,9 @@ The behaviour follows the Java implementation, including the syntax of
 `include`, the order of evaluation and the fact that a failed batch entry
 becomes `null`. The intentional differences are:
 
+* `fields` takes paths (see [Field paths](#field-paths)). The Java filter
+  matches a field name on every level of the response instead, so
+  `fields=-title` there also removes `users.title`.
 * Responses that are not JSON (other content type, compressed, empty,
   unparsable) are passed through unchanged instead of failing the request.
 * The upstream is asked for an uncompressed response whenever `include` or

@@ -70,36 +70,91 @@ func parseIncludeParams(value string) []param {
 	return params
 }
 
-// parseFields splits the value of the fields query parameter into the
-// whitelist (`id,title`) and the blacklist (`-title`).
-func parseFields(value string) (included, excluded map[string]bool) {
-	included = map[string]bool{}
-	excluded = map[string]bool{}
-	for _, field := range strings.Split(value, ",") {
-		switch {
-		case field == "":
-		case strings.HasPrefix(field, excludeFieldPrefix):
-			excluded[strings.TrimPrefix(field, excludeFieldPrefix)] = true
-		default:
-			included[field] = true
-		}
-	}
-	return included, excluded
+// fieldSelection is a node of the tree built from the fields query
+// parameter. The root stands for the top level of the document and every
+// child for a field of that level.
+type fieldSelection struct {
+	children map[string]*fieldSelection
+	// excluded: the field was listed as `-path.to.field`.
+	excluded bool
+	// selects: the field, or one of its descendants, was listed as
+	// `path.to.field`. A level with at least one selecting field keeps
+	// only its selecting fields.
+	selects bool
 }
 
-// filterTree removes fields by name on every level of the tree.
-func filterTree(tree *node, included, excluded map[string]bool) {
+func (f *fieldSelection) child(name string) *fieldSelection {
+	if f.children == nil {
+		f.children = map[string]*fieldSelection{}
+	}
+	c, ok := f.children[name]
+	if !ok {
+		c = &fieldSelection{}
+		f.children[name] = c
+	}
+	return c
+}
+
+func (f *fieldSelection) restrictive() bool {
+	for _, c := range f.children {
+		if c.selects {
+			return true
+		}
+	}
+	return false
+}
+
+// parseFields parses the value of the fields query parameter: a comma
+// separated list of dot separated paths, like the include parameter.
+// `id,users.name` keeps only those fields, `-title,-users.rel` removes
+// them. It returns nil when the value does not select anything.
+func parseFields(value string) *fieldSelection {
+	root := &fieldSelection{}
+	for _, field := range strings.Split(value, ",") {
+		excluded := strings.HasPrefix(field, excludeFieldPrefix)
+		path := strings.TrimPrefix(field, excludeFieldPrefix)
+		if path == "" {
+			continue
+		}
+
+		current := root
+		for _, name := range strings.Split(path, ".") {
+			current = current.child(name)
+			if !excluded {
+				current.selects = true
+			}
+		}
+		if excluded {
+			current.excluded = true
+		}
+	}
+	if len(root.children) == 0 {
+		return nil
+	}
+	return root
+}
+
+// filterTree applies a field selection to the tree. Arrays are transparent:
+// a selection applies to every element of an array.
+func filterTree(tree *node, selection *fieldSelection) {
 	switch tree.kind {
 	case kindArray:
 		for _, item := range tree.items {
-			filterTree(item, included, excluded)
+			filterTree(item, selection)
 		}
 	case kindObject:
+		restrictive := selection.restrictive()
 		tree.retain(func(key string) bool {
-			return (len(included) == 0 || included[key]) && !excluded[key]
+			c := selection.children[key]
+			if c == nil {
+				return !restrictive
+			}
+			return !c.excluded && (c.selects || !restrictive)
 		})
 		for _, key := range tree.keys {
-			filterTree(tree.fields[key], included, excluded)
+			if c := selection.children[key]; c != nil && len(c.children) > 0 {
+				filterTree(tree.fields[key], c)
+			}
 		}
 	}
 }
